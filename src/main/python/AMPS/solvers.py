@@ -39,7 +39,7 @@ def solve_cons_AMPS(rshg, rtpf, silent=True, unit="degree"):
 
     resopt = minimize(
         objective2,
-        [1.047, 0.611],
+        [0.5, 0.43],
         args=(rshg, rtpf),
         method="SLSQP",
         bounds=((1e-3, 1.57), (3.5e-2, 1.484)),
@@ -82,7 +82,7 @@ def solve_AMPS(rshg, rtpf, tolerance=1e-4, unit="degree", silent=True):
         return nan, nan
 
     try:
-        sol = root(objective, [1.047, 0.436], args=(rshg, rtpf), tol=tolerance)
+        sol = root(objective, [0.5, 0.43], args=(rshg, rtpf), tol=tolerance)
     except ZeroDivisionError:
         if not silent:
             print(

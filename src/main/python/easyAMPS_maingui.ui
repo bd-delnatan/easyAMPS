@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>926</width>
-    <height>772</height>
+    <width>1019</width>
+    <height>774</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -44,8 +44,8 @@
      <height>600</height>
     </size>
    </property>
-   <layout class="QHBoxLayout" name="horizontalLayout">
-    <item>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="1">
      <widget class="QTabWidget" name="tabWidget">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -57,10 +57,10 @@
        <enum>QTabWidget::North</enum>
       </property>
       <property name="tabShape">
-       <enum>QTabWidget::Triangular</enum>
+       <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tab">
        <property name="sizePolicy">
@@ -72,22 +72,21 @@
        <attribute name="title">
         <string>Data Table</string>
        </attribute>
-       <widget class="DataFrameWidget" name="tableWidget">
-        <property name="geometry">
-         <rect>
-          <x>0</x>
-          <y>0</y>
-          <width>790</width>
-          <height>670</height>
-         </rect>
-        </property>
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-          <horstretch>1</horstretch>
-          <verstretch>1</verstretch>
-         </sizepolicy>
-        </property>
-       </widget>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="DataFrameWidget" name="tableWidget">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>1</horstretch>
+            <verstretch>1</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_2"/>
+        </item>
+       </layout>
       </widget>
       <widget class="QWidget" name="tab_2">
        <attribute name="title">
@@ -103,39 +102,89 @@
        <attribute name="title">
         <string>Angle calculator</string>
        </attribute>
-       <widget class="DataFrameWidget" name="calculatorTableWidget">
-        <property name="geometry">
-         <rect>
-          <x>0</x>
-          <y>2</y>
-          <width>343</width>
-          <height>667</height>
-         </rect>
-        </property>
-       </widget>
-       <widget class="QPushButton" name="computeAnglesButton">
-        <property name="geometry">
-         <rect>
-          <x>356</x>
-          <y>614</y>
-          <width>143</width>
-          <height>51</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>Compute angles</string>
-        </property>
-       </widget>
-       <widget class="matplotlibWidget" name="anglecalc_mplwidget" native="true">
-        <property name="geometry">
-         <rect>
-          <x>348</x>
-          <y>4</y>
-          <width>541</width>
-          <height>539</height>
-         </rect>
-        </property>
-       </widget>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="DataFrameWidget" name="calculatorTableWidget">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>275</width>
+            <height>100</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout">
+          <item>
+           <widget class="matplotlibWidget" name="anglecalc_mplwidget" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>300</width>
+              <height>250</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="tab4_groupBox">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>300</width>
+              <height>200</height>
+             </size>
+            </property>
+            <property name="title">
+             <string>actions</string>
+            </property>
+            <widget class="QPushButton" name="computeAnglesButton">
+             <property name="geometry">
+              <rect>
+               <x>20</x>
+               <y>30</y>
+               <width>151</width>
+               <height>23</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>compute angles</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="checkSolutionsButton">
+             <property name="geometry">
+              <rect>
+               <x>20</x>
+               <y>70</y>
+               <width>151</width>
+               <height>23</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>check (selected) solutions</string>
+             </property>
+            </widget>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
       </widget>
      </widget>
     </item>
@@ -146,7 +195,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>926</width>
+     <width>1019</width>
      <height>22</height>
     </rect>
    </property>

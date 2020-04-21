@@ -13,6 +13,9 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 from AMPS.solvers import compute_angles
+from AMPS.viz import visualize_AMPS_solution
+from solutionsWidget import SolutionsCheckWidget
+from AMPS import _AMPSboundaries
 
 os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
 
@@ -21,6 +24,18 @@ root = Path(__file__).parent
 Ui_MainWindow, QtBaseClass = uic.loadUiType(str(root / "easyAMPS_maingui.ui"))
 
 plt.style.use(str(root / "delnatan.mplstyle"))
+
+
+def toNumber(x):
+
+    try:
+        # convert to float
+        out = float(x)
+    except ValueError:
+        # if can't do it, return as string
+        out = str(x)
+
+    return out
 
 
 class AppContext(ApplicationContext):
@@ -37,16 +52,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.setWindowTitle("easyAMPS v0.1 (Biodesy, Inc.)")
 
-        self.setStatusBar(QStatusBar(self))
-
         # create a toolbar
         toolbar = QToolBar("AMPS toolbar")
         self.addToolBar(toolbar)
 
         fit_phases_button = QAction("Fit phases", self)
-        fit_phases_button.setStatusTip(
-            "Determine phase difference from loaded data"
-        )
+        fit_phases_button.setStatusTip("Determine phase difference from loaded data")
         fit_phases_button.triggered.connect(self.determine_phases)
         toolbar.addAction(fit_phases_button)
 
@@ -57,12 +68,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # add some empty dataframe to the angle calculator table
         calcanglesdf = pd.DataFrame(
-            {
-                "SHGratio": [""],
-                "TPFratio": [""],
-                "angle": [""],
-                "distribution": [""],
-            }
+            {"SHGratio": [""], "TPFratio": [""], "angle": [""], "distribution": [""],}
         )
         self.calculatorTableWidget.setDataFrame(calcanglesdf)
 
@@ -70,6 +76,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionOpen.triggered.connect(self.openfile)
         self.actionExit.triggered.connect(sys.exit)
         self.computeAnglesButton.clicked.connect(self.computeAngles)
+        self.checkSolutionsButton.clicked.connect(self.checkSolutions)
 
     def openfile(self):
         """ File > Open dialog box """
@@ -115,6 +122,53 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.anglecalc_mplwidget.canvas.axes.set_xlim([2.0, 70.0])
         self.anglecalc_mplwidget.canvas.axes.set_ylim([0.0, 89.9])
         self.anglecalc_mplwidget.canvas.draw()
+
+    def checkSolutions(self):
+
+        # get selected points
+        selectedsolutions = self.calculatorTableWidget.selectedIndexes()
+        selectedrows = list(set([sel.row() for sel in selectedsolutions]))
+
+        shgratios = []
+        tpfratios = []
+
+        for row in selectedrows:
+            _shgratio = self.calculatorTableWidget.df.loc[row, "SHGratio"]
+            _tpfratio = self.calculatorTableWidget.df.loc[row, "TPFratio"]
+            if _shgratio is not "":
+                shgratios.append(toNumber(_shgratio))
+            if _tpfratio is not "":
+                tpfratios.append(toNumber(_tpfratio))
+
+        print("Solutions to check")
+        print(shgratios)
+        print(tpfratios)
+
+        dlg1 = SolutionsCheckWidget()
+        dlg1.setWindowTitle("AMPS solution visual checks")
+
+        dlg1.figure2.canvas.axes.fill_between(
+            _AMPSboundaries.x,
+            _AMPSboundaries.y_lower,
+            _AMPSboundaries.y_upper,
+            ec="darkgreen",
+            linewidth=1.5,
+            fc="mediumseagreen",
+            alpha=0.4,
+        )
+        dlg1.figure2.canvas.axes.set_xlabel("TPF ratio")
+        dlg1.figure2.canvas.axes.set_ylabel("SHG ratio")
+        dlg1.figure2.canvas.axes.set_ylim([0, 40])
+        dlg1.figure2.canvas.axes.set_xlim([0, 7])
+
+        for _tpf, _shg in zip(tpfratios, shgratios):
+            visualize_AMPS_solution(_shg, _tpf, ax=dlg1.figure1.canvas.axes)
+            dlg1.figure2.canvas.axes.plot(_tpf, _shg, "o", c="rebeccapurple")
+
+        # draw both plots
+        dlg1.draw()
+        # execute dialog box
+        dlg1.exec_()
 
 
 if __name__ == "__main__":
