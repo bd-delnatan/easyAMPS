@@ -23,5 +23,7 @@ class SolutionsCheckWidget(QDialog):
 
     def draw(self):
 
+        self.figure1.tight_layout()
+        self.figure2.tight_layout()
         self.figure1.canvas.draw()
         self.figure2.canvas.draw()

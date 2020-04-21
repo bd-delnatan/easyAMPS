@@ -160,7 +160,7 @@
                <x>20</x>
                <y>30</y>
                <width>151</width>
-               <height>23</height>
+               <height>25</height>
               </rect>
              </property>
              <property name="sizePolicy">
@@ -168,6 +168,15 @@
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>150</width>
+               <height>25</height>
+              </size>
+             </property>
+             <property name="toolTip">
+              <string>Solve for Gaussian distribution (angle, distribution) from ratios</string>
              </property>
              <property name="text">
               <string>compute angles</string>
@@ -179,7 +188,7 @@
                <x>20</x>
                <y>80</y>
                <width>151</width>
-               <height>23</height>
+               <height>25</height>
               </rect>
              </property>
              <property name="sizePolicy">
@@ -187,6 +196,15 @@
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>150</width>
+               <height>25</height>
+              </size>
+             </property>
+             <property name="toolTip">
+              <string>Visualize selected point(s) from the table within all AMPS solution space</string>
              </property>
              <property name="text">
               <string>check (selected) solutions</string>
