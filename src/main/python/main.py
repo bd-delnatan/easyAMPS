@@ -140,10 +140,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if _tpfratio is not "":
                 tpfratios.append(toNumber(_tpfratio))
 
-        print("Solutions to check")
-        print(shgratios)
-        print(tpfratios)
-
         dlg1 = SolutionsCheckWidget()
         dlg1.setWindowTitle("AMPS solution visual checks")
 
