@@ -113,7 +113,7 @@
           </property>
           <property name="minimumSize">
            <size>
-            <width>275</width>
+            <width>320</width>
             <height>100</height>
            </size>
           </property>
@@ -163,6 +163,12 @@
                <height>23</height>
               </rect>
              </property>
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="text">
               <string>compute angles</string>
              </property>
@@ -171,10 +177,16 @@
              <property name="geometry">
               <rect>
                <x>20</x>
-               <y>70</y>
+               <y>80</y>
                <width>151</width>
                <height>23</height>
               </rect>
+             </property>
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
              </property>
              <property name="text">
               <string>check (selected) solutions</string>
