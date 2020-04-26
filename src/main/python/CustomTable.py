@@ -58,17 +58,19 @@ class DataFrameWidget(QTableView):
 
         self._data_model.setDataFrame(df)
 
-        # create header menu bindings
+        # create (horizontal/top) header menu bindings
         self.horizontalHeader().setContextMenuPolicy(Qt.CustomContextMenu)
         self.horizontalHeader().customContextMenuRequested.connect(
             self._header_menu
         )
 
+        # create (vertical/side/row) header menu bindings
         self.verticalHeader().setContextMenuPolicy(Qt.CustomContextMenu)
         self.verticalHeader().customContextMenuRequested.connect(
             self._index_menu
         )
 
+        # create custom QTableView menu bindings
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._table_menu)
 
@@ -82,6 +84,9 @@ class DataFrameWidget(QTableView):
         elif event.matches(QKeySequence.Paste):
             # load clipboard content as dataframe
             self.paste()
+        elif event.matches(QKeySequence.Delete):
+            print("Delete button presssed")
+            self.clear()
         else:
             # ignore the event, pass through normal event handler
             super(DataFrameWidget, self).keyPressEvent(event)
@@ -96,7 +101,12 @@ class DataFrameWidget(QTableView):
 
     @property
     def df(self):
-        """ returns the underlying data-frame """
+        """ returns the underlying data-frame for convenience
+
+        The underlying DataFrame can otherwise be accesssed via
+        self._data_model.df
+
+        """
         return self._data_model.df
 
     def copy(self):
@@ -135,6 +145,10 @@ class DataFrameWidget(QTableView):
             )
         else:
             clipboard = QApplication.clipboard().text()
+
+            if clipboard is None or clipboard == "":
+                return
+
             dfnew = pandas.read_csv(StringIO(clipboard), sep="\t", header=None)
             Nrows, Ncols = dfnew.shape
             # current position
@@ -161,6 +175,20 @@ class DataFrameWidget(QTableView):
             self._data_model.layoutChanged.emit()
 
             self.resizeColumnsToContents()
+
+    def clear(self):
+        """ clear selected cell contents """
+        selindexes = self.selectedIndexes()
+
+        self._data_model.layoutAboutToBeChanged.emit()
+
+        for sel in selindexes:
+            row = sel.row()
+            col = sel.column()
+
+            self._data_model.df.iloc[row, col] = nan
+
+        self._data_model.layoutChanged.emit()
 
     def _header_menu(self, pos):
         menu = QMenu(self)
@@ -201,6 +229,8 @@ class DataFrameWidget(QTableView):
             partial(self._data_model.insertColumns, column_index + 1),
         )
 
+        menu.addAction(r"Delete selected column(s)", self.removeSelectedColumns)
+
         menu.exec_(self.mapToGlobal(pos))
 
     def _index_menu(self, pos):
@@ -227,6 +257,8 @@ class DataFrameWidget(QTableView):
     def _table_menu(self, pos):
         menu = QMenu(self)
         menu.addAction(r"Copy selected", self.copy)
+        menu.addAction(r"Paste", self.paste)
+        menu.addAction(r"Clear contents", self.clear)
         menu.exec_(self.mapToGlobal(pos))
 
     def renameHeader(self, column_index):
@@ -234,9 +266,14 @@ class DataFrameWidget(QTableView):
         newname, ok = QInputDialog.getText(
             self, "Rename column header", "New column name:"
         )
-        newcolumns = self.df.columns.tolist()
-        newcolumns[column_index] = newname
-        self.df.columns = newcolumns
+
+        newname = newname.strip()
+
+        # name can't be empty
+        if newname != "":
+            newcolumns = self.df.columns.tolist()
+            newcolumns[column_index] = newname
+            self.df.columns = newcolumns
 
     def removeSelectedRows(self):
         selected_rows = sorted(
@@ -246,6 +283,17 @@ class DataFrameWidget(QTableView):
         while len(selected_rows) > 0:
             target = selected_rows.pop()
             self._data_model.removeRows(target)
+
+    def removeSelectedColumns(self):
+        selected_columns = sorted(
+            list(set([sel.column() for sel in self.selectedIndexes()]))
+        )
+
+        print(selected_columns)
+
+        while len(selected_columns) > 0:
+            target = selected_columns.pop()
+            self._data_model.removeColumns(target)
 
 
 class DataFrameModel(QAbstractTableModel):
@@ -372,14 +420,13 @@ class DataFrameModel(QAbstractTableModel):
             axis=0,
             ignore_index=True,
         )
-        self.indexlabels = self.df.index
 
         self.endInsertRows()
 
         return True
 
     def removeRows(self, position, count=1, index=QModelIndex()):
-
+        """ remove rows, only count=1 cases has been tested """
         self.beginRemoveRows(QModelIndex(), position, position + count - 1)
         self.df = self.df.drop(self.df.index[position], axis=0)
         self.df.index = [i for i in range(self.df.shape[0])]
@@ -388,18 +435,24 @@ class DataFrameModel(QAbstractTableModel):
         return True
 
     def insertColumns(self, position, count=1, index=QModelIndex()):
+        """ function to remove column(s), new columns are named NewColumn# """
         # to keep track of naming
-        self.Ncoladded += 1
+
         self.beginInsertColumns(QModelIndex(), position, position + count - 1)
-        # insert is an in-place operation
-        self.df.insert(position, f"NewColumn{self.Ncoladded}", value=nan)
+
+        for c in range(count):
+            self.Ncoladded += 1
+            # insert is an in-place operation
+            self.df.insert(position, f"NewColumn{self.Ncoladded}", value=nan)
+
         self.endInsertColumns()
 
         return True
 
     def removeColumns(self, position, count=1, index=QModelIndex()):
+        """ remove columns, only count=1 cases have been tested """
         self.beginRemoveColumns(QModelIndex(), position, position + count - 1)
-        self.df = self.df.drop(self.headers[position], axis=1)
+        self.df.drop(self.df.columns[position], axis=1, inplace=True)
         self.endRemoveColumns()
 
         return True

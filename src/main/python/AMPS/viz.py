@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from AMPS import AMPSexperiment
 from pandas import DataFrame
-from . import _shglut, _tpflut
+from . import _shglut, _tpflut, _AMPSboundaries
 
 
 def place_in_range(vec, frac):
@@ -156,10 +156,16 @@ def overview(data, figsize=(8, 6.25), experiment=None):
     fig, ax = plt.subplots(nrows=2, ncols=2, figsize=figsize)
 
     ax[0, 0].plot(
-        data["P-FLcorr"].values.ravel(), data["P-SHG"].values.ravel(), "r.", alpha=0.3,
+        data["P-FLcorr"].values.ravel(),
+        data["P-SHG"].values.ravel(),
+        "r.",
+        alpha=0.3,
     )
     ax[0, 1].plot(
-        data["S-FLcorr"].values.ravel(), data["S-SHG"].values.ravel(), "r.", alpha=0.3,
+        data["S-FLcorr"].values.ravel(),
+        data["S-SHG"].values.ravel(),
+        "r.",
+        alpha=0.3,
     )
 
     ax[0, 0].errorbar(
@@ -242,10 +248,16 @@ def overview2(experiment, figsize=(8, 9.4)):
     fig, ax = plt.subplots(nrows=3, ncols=2, figsize=figsize)
 
     ax[0, 0].plot(
-        data["P-FLcorr"].values.ravel(), data["P-SHG"].values.ravel(), "r.", alpha=0.3,
+        data["P-FLcorr"].values.ravel(),
+        data["P-SHG"].values.ravel(),
+        "r.",
+        alpha=0.3,
     )
     ax[0, 1].plot(
-        data["S-FLcorr"].values.ravel(), data["S-SHG"].values.ravel(), "r.", alpha=0.3,
+        data["S-FLcorr"].values.ravel(),
+        data["S-SHG"].values.ravel(),
+        "r.",
+        alpha=0.3,
     )
 
     ax[0, 0].errorbar(
@@ -299,7 +311,9 @@ def overview2(experiment, figsize=(8, 9.4)):
             _deg = np.rad2deg(experiment.Pphases.optres.params["delphi"].value)
 
             if experiment.Pphases.optres.params["delphi"].stderr is not None:
-                _degerr = np.rad2deg(experiment.Pphases.optres.params["delphi"].stderr)
+                _degerr = np.rad2deg(
+                    experiment.Pphases.optres.params["delphi"].stderr
+                )
             else:
                 _degerr = np.nan
 
@@ -324,7 +338,9 @@ def overview2(experiment, figsize=(8, 9.4)):
 
             # convert to degrees
             _deg = np.rad2deg(experiment.Sphases.optres.params["delphi"].value)
-            _degerr = np.rad2deg(experiment.Sphases.optres.params["delphi"].stderr)
+            _degerr = np.rad2deg(
+                experiment.Sphases.optres.params["delphi"].stderr
+            )
 
             ax[0, 1].text(
                 xpos, ypos, f"{_deg:.0f} ± {_degerr:.0f} ˚", fontsize=12,
@@ -349,9 +365,14 @@ def overview2(experiment, figsize=(8, 9.4)):
         labeled = data.query("frac_labeled == 1.0")
         rest = data.query("frac_labeled != 1.0")
 
-        ax[2, 1].plot(rest["distribution"].values, rest["angle"].values, "o", c="gray")
         ax[2, 1].plot(
-            labeled["distribution"].values, labeled["angle"].values, "o", c="darkred",
+            rest["distribution"].values, rest["angle"].values, "o", c="gray"
+        )
+        ax[2, 1].plot(
+            labeled["distribution"].values,
+            labeled["angle"].values,
+            "o",
+            c="darkred",
         )
 
         ax[2, 1].set_xlabel("distribution")
@@ -410,7 +431,9 @@ def compare_column(
         returnfig = False
 
     xpos = np.arange(len(xlabels))
-    jittered_idx = idxarr + (np.random.random(idxarr.size) - 0.5) * barwidth / 2.5
+    jittered_idx = (
+        idxarr + (np.random.random(idxarr.size) - 0.5) * barwidth / 2.5
+    )
     ax.bar(
         xpos,
         heights,
@@ -453,7 +476,15 @@ def compare_pair(experiment_dict, column1, column2, ax=None, frac_labeled=1.0):
 
         subdata = data[data["frac_labeled"] == frac_labeled]
 
-        (p,) = ax.plot(subdata[column1], subdata[column2], "o", alpha=0.7, label=name)
+        (p,) = ax.plot(
+            subdata[column1], subdata[column2], ".", alpha=0.75, label=name
+        )
+
+        ax.errorbar(
+            subdata[column1].mean(), subdata[column2].mean(),
+            xerr=subdata[column1].std(), yerr=subdata[column2].std(),
+            fmt='o'
+        )
 
     ax.set_xlabel(f"{column1}")
     ax.set_ylabel(f"{column2}")
@@ -483,7 +514,11 @@ def compare_quadratic_fit(experiment_dict, size=(11, 5)):
 
         if expt.Pphases is not None:
             ax[0].plot(
-                expt.Pphases.fit.x, expt.Pphases.fit.y, "-", lw=2, c=p1.get_color(),
+                expt.Pphases.fit.x,
+                expt.Pphases.fit.y,
+                "-",
+                lw=2,
+                c=p1.get_color(),
             )
 
         (p2,) = ax[1].plot(expt.x_S, expt.y_S, ".", alpha=0.5)
@@ -502,7 +537,11 @@ def compare_quadratic_fit(experiment_dict, size=(11, 5)):
 
         if expt.Sphases is not None:
             ax[1].plot(
-                expt.Sphases.fit.x, expt.Sphases.fit.y, "-", lw=2, c=p2.get_color(),
+                expt.Sphases.fit.x,
+                expt.Sphases.fit.y,
+                "-",
+                lw=2,
+                c=p2.get_color(),
             )
 
     ax[0].set_xlabel("P-FLcorr")
@@ -533,22 +572,29 @@ def visualize_AMPS_solution(
     shgratio = _shglut["map"]
     tpfratio = _tpflut["map"]
 
-    ax.contour(
-        distributions,
-        angles,
-        shgratio,
-        levels=[rshg],
-        colors=[shg_color],
-        linewidths=[2.0],
-    )
-    ax.contour(
-        distributions,
-        angles,
-        tpfratio,
-        levels=[rtpf],
-        colors=[tpf_color],
-        linewidths=[2.0],
-    )
+    if rshg is not None or rshg != np.nan:
+        cs_shg = ax.contour(
+            distributions,
+            angles,
+            shgratio,
+            levels=[rshg],
+            colors=[shg_color],
+            linewidths=[2.0],
+        )
+
+        ax.clabel(cs_shg, cs_shg.levels)
+
+    if rtpf is not None or rtpf != np.nan:
+        cs_tpf = ax.contour(
+            distributions,
+            angles,
+            tpfratio,
+            levels=[rtpf],
+            colors=[tpf_color],
+            linewidths=[2.0],
+        )
+
+        ax.clabel(cs_tpf, cs_tpf.levels)
 
     custom_lines = [
         Line2D([0], [0], color=shg_color, lw=2),
@@ -556,7 +602,7 @@ def visualize_AMPS_solution(
     ]
     ax.set_xlabel("distribution")
     ax.set_ylabel("angle")
-    ax.legend(custom_lines, ["SHG", "TPF"], loc="lower right")
+    ax.legend(custom_lines, ["SHG", "TPF"], loc="upper right")
 
     if returnfig:
         return fig, ax

@@ -11,6 +11,7 @@ from pathlib import Path
 import sys
 import os
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 from AMPS.solvers import compute_angles
 from AMPS.viz import visualize_AMPS_solution
@@ -135,10 +136,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for row in selectedrows:
             _shgratio = self.calculatorTableWidget.df.loc[row, "SHGratio"]
             _tpfratio = self.calculatorTableWidget.df.loc[row, "TPFratio"]
-            if _shgratio is not "":
+            if _shgratio != "":
                 shgratios.append(toNumber(_shgratio))
-            if _tpfratio is not "":
+            else:
+                shgratios.append(np.nan)
+            if _tpfratio != "":
                 tpfratios.append(toNumber(_tpfratio))
+            else:
+                tpfratios.append(np.nan)
 
         dlg1 = SolutionsCheckWidget()
         dlg1.setWindowTitle("AMPS solution visual checks")
