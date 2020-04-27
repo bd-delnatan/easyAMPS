@@ -60,15 +60,11 @@ class DataFrameWidget(QTableView):
 
         # create (horizontal/top) header menu bindings
         self.horizontalHeader().setContextMenuPolicy(Qt.CustomContextMenu)
-        self.horizontalHeader().customContextMenuRequested.connect(
-            self._header_menu
-        )
+        self.horizontalHeader().customContextMenuRequested.connect(self._header_menu)
 
         # create (vertical/side/row) header menu bindings
         self.verticalHeader().setContextMenuPolicy(Qt.CustomContextMenu)
-        self.verticalHeader().customContextMenuRequested.connect(
-            self._index_menu
-        )
+        self.verticalHeader().customContextMenuRequested.connect(self._index_menu)
 
         # create custom QTableView menu bindings
         self.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -85,7 +81,6 @@ class DataFrameWidget(QTableView):
             # load clipboard content as dataframe
             self.paste()
         elif event.matches(QKeySequence.Delete):
-            print("Delete button presssed")
             self.clear()
         else:
             # ignore the event, pass through normal event handler
@@ -140,8 +135,7 @@ class DataFrameWidget(QTableView):
 
         if len(selindexes) != 1:
             alert(
-                title="Alert",
-                message="To paste into table, select a single cell",
+                title="Alert", message="To paste into table, select a single cell",
             )
         else:
             clipboard = QApplication.clipboard().text()
@@ -156,12 +150,8 @@ class DataFrameWidget(QTableView):
             # figure out if the current size of the table fits
             rowsize, colsize = self.df.shape
 
-            Ncol_extra = (
-                0 if col_id + Ncols <= colsize else col_id + Ncols - colsize
-            )
-            Nrow_extra = (
-                0 if row_id + Nrows <= rowsize else row_id + Nrows - rowsize
-            )
+            Ncol_extra = 0 if col_id + Ncols <= colsize else col_id + Ncols - colsize
+            Nrow_extra = 0 if row_id + Nrows <= rowsize else row_id + Nrows - rowsize
 
             if Ncol_extra > 0:
                 self._data_model.insertColumns(colsize, count=Ncol_extra)
@@ -198,30 +188,23 @@ class DataFrameWidget(QTableView):
             # out of bounds
             return
 
-        menu.addAction(
-            r"Rename column", partial(self.renameHeader, column_index)
-        )
+        menu.addAction(r"Rename column", partial(self.renameHeader, column_index))
         menu.addSeparator()
 
         menu.addAction(
             r"Sort (Descending)",
-            partial(
-                self._data_model.sort, column_index, order=Qt.DescendingOrder
-            ),
+            partial(self._data_model.sort, column_index, order=Qt.DescendingOrder),
         )
 
         menu.addAction(
             r"Sort (Ascending)",
-            partial(
-                self._data_model.sort, column_index, order=Qt.AscendingOrder
-            ),
+            partial(self._data_model.sort, column_index, order=Qt.AscendingOrder),
         )
 
         menu.addSeparator()
 
         menu.addAction(
-            r"Insert column <-",
-            partial(self._data_model.insertColumns, column_index),
+            r"Insert column <-", partial(self._data_model.insertColumns, column_index),
         )
 
         menu.addAction(
@@ -246,8 +229,7 @@ class DataFrameWidget(QTableView):
         )
 
         menu.addAction(
-            r"Insert row below",
-            partial(self._data_model.insertRows, row_index + 1),
+            r"Insert row below", partial(self._data_model.insertRows, row_index + 1),
         )
 
         menu.addAction(r"Delete selected row(s)", self.removeSelectedRows)
@@ -276,9 +258,7 @@ class DataFrameWidget(QTableView):
             self.df.columns = newcolumns
 
     def removeSelectedRows(self):
-        selected_rows = sorted(
-            list(set([sel.row() for sel in self.selectedIndexes()]))
-        )
+        selected_rows = sorted(list(set([sel.row() for sel in self.selectedIndexes()])))
 
         while len(selected_rows) > 0:
             target = selected_rows.pop()
@@ -288,8 +268,6 @@ class DataFrameWidget(QTableView):
         selected_columns = sorted(
             list(set([sel.column() for sel in self.selectedIndexes()]))
         )
-
-        print(selected_columns)
 
         while len(selected_columns) > 0:
             target = selected_columns.pop()

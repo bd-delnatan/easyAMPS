@@ -15,14 +15,13 @@ from numpy import (
 
 
 class AMPSexperiment:
-    def __init__(self, dataframe, name, experiment=None):
+    def __init__(self, dataframe, name):
         self.name = name
         self.data = dataframe
         self.unlabeled = dataframe[dataframe["frac_labeled"] == 0].copy()
         self.labeled = dataframe[dataframe["frac_labeled"] > 0].copy()
         self.grpdf = dataframe.groupby("frac_labeled").agg(["mean", "std"])
         self.labeled_index = self.labeled.index
-        self.experiment = experiment
         self.p_inflection = None
         self.s_inflection = None
         self.pshg_bg = self.unlabeled["P-SHG"].mean()
@@ -140,6 +139,8 @@ class AMPSexperiment:
         force_phase_S=None,
         force_PSHG_bg=None,
         force_SSHG_bg=None,
+        P_inflection=None,
+        S_inflection=None,
         units="degree",
     ):
         """ correct SHG signal uses given phases in radians """
@@ -168,8 +169,11 @@ class AMPSexperiment:
             if units == "degree":
                 phase_P = deg2rad(force_phase_P)
                 if force_phase_P < 90.0:
+                    # constructive interference always uses '-'
                     p_signs = -ones_like(x_P)
                 elif force_phase_P > 90.0:
+                    # destructive interference is assumed to use '+'
+                    # if phases cannot be determined
                     p_signs = ones_like(x_P)
 
             elif units == "radians":
@@ -197,6 +201,11 @@ class AMPSexperiment:
         _pshg_bg = force_PSHG_bg if force_PSHG_bg is not None else self.pshg_bg
         _sshg_bg = force_SSHG_bg if force_SSHG_bg is not None else self.sshg_bg
 
+        if P_inflection is not None:
+            p_signs = return_signs(x_P, P_inflection)
+        if S_inflection is not None:
+            s_signs = return_signs(x_S, S_inflection)
+
         if _pshg_bg is None:
             print("Please specify P-SHG background")
             return None
@@ -205,38 +214,24 @@ class AMPSexperiment:
             return None
 
         correct_SHG(
-            self.labeled,
-            _pshg_bg,
-            _sshg_bg,
-            phase_P,
-            phase_S,
-            p_signs,
-            s_signs,
+            self.labeled, _pshg_bg, _sshg_bg, phase_P, phase_S, p_signs, s_signs,
         )
 
-        self.data.loc[self.labeled_index, "P-SHGcorr"] = self.labeled[
-            "P-SHGcorr"
-        ]
-        self.data.loc[self.labeled_index, "S-SHGcorr"] = self.labeled[
-            "S-SHGcorr"
-        ]
+        self.data.loc[self.labeled_index, "P-SHGcorr"] = self.labeled["P-SHGcorr"]
+        self.data.loc[self.labeled_index, "S-SHGcorr"] = self.labeled["S-SHGcorr"]
 
         self.recalculate_stats()
 
     def compute_TPFratio(self):
 
-        self.labeled["TPFratio"] = (
-            self.labeled["P-FLcorr"] / self.labeled["S-FLcorr"]
-        )
+        self.labeled["TPFratio"] = self.labeled["P-FLcorr"] / self.labeled["S-FLcorr"]
 
         self.data.loc[self.labeled_index, "TPFratio"] = self.labeled["TPFratio"]
         self.recalculate_stats()
 
     def compute_SHGratio(self):
 
-        self.labeled["SHGratio"] = (
-            self.labeled["P-SHGcorr"] / self.labeled["S-SHGcorr"]
-        )
+        self.labeled["SHGratio"] = self.labeled["P-SHGcorr"] / self.labeled["S-SHGcorr"]
 
         # assign back to original data
         self.data.loc[self.labeled_index, "SHGratio"] = self.labeled["SHGratio"]
@@ -244,9 +239,7 @@ class AMPSexperiment:
 
     def solve_angles(self, silent=True, mode="fast"):
 
-        if ("TPFratio" in self.data.columns) and (
-            "SHGratio" in self.data.columns
-        ):
+        if ("TPFratio" in self.data.columns) and ("SHGratio" in self.data.columns):
 
             self.data[["angle", "distribution"]] = self.data.apply(
                 compute_angles, axis=1, silent=silent, mode=mode
@@ -255,9 +248,7 @@ class AMPSexperiment:
             self.recalculate_stats()
 
         else:
-            print(
-                "You need to compute TPF and SHG ratios before solving for angles."
-            )
+            print("You need to compute TPF and SHG ratios before solving for angles.")
 
 
 def return_signs(vec, inflection):

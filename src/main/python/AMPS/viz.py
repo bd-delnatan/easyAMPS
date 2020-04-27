@@ -38,9 +38,12 @@ def strip_chart(data, grp, ax, column_name="TPFratio"):
     ax.set_ylabel(f"{column_name}")
 
 
-def linearity_check(grp, ax):
-    # copy the existing axis
-    ax_twin = ax.twinx()
+def linearity_check(grp, ax, twinax=None):
+
+    if twinax is None:
+        ax_twin = ax.twinx()
+    else:
+        ax_twin = twinax
 
     x = grp.index.values
     yP = grp["P-FLcorr"]["mean"].values
@@ -142,7 +145,7 @@ def square_check(grp, ax):
     ax.set_title("concentration vs SHG")
 
 
-def overview(data, figsize=(8, 6.25), experiment=None):
+def overview(data, figsize=(8, 6.25), experiment=None, fighandles=None, twin_ax=None):
     """ summarize overview of 4-channel data
 
     This function may change in the future
@@ -153,19 +156,18 @@ def overview(data, figsize=(8, 6.25), experiment=None):
     """
     stats = data.groupby("frac_labeled").agg(["mean", "std"])
 
-    fig, ax = plt.subplots(nrows=2, ncols=2, figsize=figsize)
+    if fighandles is None:
+        fig, ax = plt.subplots(nrows=2, ncols=2, figsize=figsize)
+        returnfig = True
+    else:
+        fig, ax = fighandles
+        returnfig = False
 
     ax[0, 0].plot(
-        data["P-FLcorr"].values.ravel(),
-        data["P-SHG"].values.ravel(),
-        "r.",
-        alpha=0.3,
+        data["P-FLcorr"].values.ravel(), data["P-SHG"].values.ravel(), "r.", alpha=0.3,
     )
     ax[0, 1].plot(
-        data["S-FLcorr"].values.ravel(),
-        data["S-SHG"].values.ravel(),
-        "r.",
-        alpha=0.3,
+        data["S-FLcorr"].values.ravel(), data["S-SHG"].values.ravel(), "r.", alpha=0.3,
     )
 
     ax[0, 0].errorbar(
@@ -225,11 +227,17 @@ def overview(data, figsize=(8, 6.25), experiment=None):
     ax[0, 1].set_ylabel("S-SHG")
 
     strip_chart(data, stats, ax[1, 0])
-    ax[1, 0].tick_params(axis="x", which="major", labelsize=10)
+    ax[1, 0].tick_params(axis="x", which="major", labelsize=7)
 
-    linearity_check(stats, ax[1, 1])
+    if twin_ax is None:
+        twin_ax = ax[1,1].twinx()
+
+    linearity_check(stats, ax[1, 1], twinax=twin_ax)
+
     fig.tight_layout()
-    return fig, ax
+
+    if returnfig:
+        return fig, ax
 
 
 def overview2(experiment, figsize=(8, 9.4)):
@@ -248,16 +256,10 @@ def overview2(experiment, figsize=(8, 9.4)):
     fig, ax = plt.subplots(nrows=3, ncols=2, figsize=figsize)
 
     ax[0, 0].plot(
-        data["P-FLcorr"].values.ravel(),
-        data["P-SHG"].values.ravel(),
-        "r.",
-        alpha=0.3,
+        data["P-FLcorr"].values.ravel(), data["P-SHG"].values.ravel(), "r.", alpha=0.3,
     )
     ax[0, 1].plot(
-        data["S-FLcorr"].values.ravel(),
-        data["S-SHG"].values.ravel(),
-        "r.",
-        alpha=0.3,
+        data["S-FLcorr"].values.ravel(), data["S-SHG"].values.ravel(), "r.", alpha=0.3,
     )
 
     ax[0, 0].errorbar(
@@ -311,9 +313,7 @@ def overview2(experiment, figsize=(8, 9.4)):
             _deg = np.rad2deg(experiment.Pphases.optres.params["delphi"].value)
 
             if experiment.Pphases.optres.params["delphi"].stderr is not None:
-                _degerr = np.rad2deg(
-                    experiment.Pphases.optres.params["delphi"].stderr
-                )
+                _degerr = np.rad2deg(experiment.Pphases.optres.params["delphi"].stderr)
             else:
                 _degerr = np.nan
 
@@ -338,9 +338,7 @@ def overview2(experiment, figsize=(8, 9.4)):
 
             # convert to degrees
             _deg = np.rad2deg(experiment.Sphases.optres.params["delphi"].value)
-            _degerr = np.rad2deg(
-                experiment.Sphases.optres.params["delphi"].stderr
-            )
+            _degerr = np.rad2deg(experiment.Sphases.optres.params["delphi"].stderr)
 
             ax[0, 1].text(
                 xpos, ypos, f"{_deg:.0f} ± {_degerr:.0f} ˚", fontsize=12,
@@ -365,14 +363,9 @@ def overview2(experiment, figsize=(8, 9.4)):
         labeled = data.query("frac_labeled == 1.0")
         rest = data.query("frac_labeled != 1.0")
 
+        ax[2, 1].plot(rest["distribution"].values, rest["angle"].values, "o", c="gray")
         ax[2, 1].plot(
-            rest["distribution"].values, rest["angle"].values, "o", c="gray"
-        )
-        ax[2, 1].plot(
-            labeled["distribution"].values,
-            labeled["angle"].values,
-            "o",
-            c="darkred",
+            labeled["distribution"].values, labeled["angle"].values, "o", c="darkred",
         )
 
         ax[2, 1].set_xlabel("distribution")
@@ -431,9 +424,7 @@ def compare_column(
         returnfig = False
 
     xpos = np.arange(len(xlabels))
-    jittered_idx = (
-        idxarr + (np.random.random(idxarr.size) - 0.5) * barwidth / 2.5
-    )
+    jittered_idx = idxarr + (np.random.random(idxarr.size) - 0.5) * barwidth / 2.5
     ax.bar(
         xpos,
         heights,
@@ -476,14 +467,14 @@ def compare_pair(experiment_dict, column1, column2, ax=None, frac_labeled=1.0):
 
         subdata = data[data["frac_labeled"] == frac_labeled]
 
-        (p,) = ax.plot(
-            subdata[column1], subdata[column2], ".", alpha=0.75, label=name
-        )
+        (p,) = ax.plot(subdata[column1], subdata[column2], ".", alpha=0.75, label=name)
 
         ax.errorbar(
-            subdata[column1].mean(), subdata[column2].mean(),
-            xerr=subdata[column1].std(), yerr=subdata[column2].std(),
-            fmt='o'
+            subdata[column1].mean(),
+            subdata[column2].mean(),
+            xerr=subdata[column1].std(),
+            yerr=subdata[column2].std(),
+            fmt="o",
         )
 
     ax.set_xlabel(f"{column1}")
@@ -514,11 +505,7 @@ def compare_quadratic_fit(experiment_dict, size=(11, 5)):
 
         if expt.Pphases is not None:
             ax[0].plot(
-                expt.Pphases.fit.x,
-                expt.Pphases.fit.y,
-                "-",
-                lw=2,
-                c=p1.get_color(),
+                expt.Pphases.fit.x, expt.Pphases.fit.y, "-", lw=2, c=p1.get_color(),
             )
 
         (p2,) = ax[1].plot(expt.x_S, expt.y_S, ".", alpha=0.5)
@@ -537,11 +524,7 @@ def compare_quadratic_fit(experiment_dict, size=(11, 5)):
 
         if expt.Sphases is not None:
             ax[1].plot(
-                expt.Sphases.fit.x,
-                expt.Sphases.fit.y,
-                "-",
-                lw=2,
-                c=p2.get_color(),
+                expt.Sphases.fit.x, expt.Sphases.fit.y, "-", lw=2, c=p2.get_color(),
             )
 
     ax[0].set_xlabel("P-FLcorr")

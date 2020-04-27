@@ -93,7 +93,7 @@ def solve_AMPS(rshg, rtpf, tolerance=1e-4, unit="degree", silent=True):
     if sol.success:
         # since the solution is unbounded, we need to enforce it ourselves
         # if either of the solution is negative, it's wrong
-        if sol.x[0] < 0 or sol.x[0] < 0:
+        if sol.x[0] < 0 or sol.x[1] < 0.0349:
             return nan, nan
         # or if it's beyond the Gaussian approximation model
         if sol.x[0] > 1.571 or sol.x[1] > 1.309:

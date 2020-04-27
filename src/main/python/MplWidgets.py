@@ -13,10 +13,29 @@ class MplCanvas(FigureCanvasQTAgg):
         super(MplCanvas, self).__init__(self.figure)
 
 
+class MplGridCanvas(FigureCanvasQTAgg):
+    def __init__(self, nrows=1, ncols=1, parent=None, width=5, height=4, dpi=100):
+        self.figure = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = self.figure.subplots(nrows=nrows, ncols=ncols)
+        super(MplGridCanvas, self).__init__(self.figure)
+
+
 class matplotlibWidget(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, nrows=1, ncols=1, parent=None):
         QWidget.__init__(self, parent)
         self.canvas = MplCanvas()
+        self.toolbar = NavigationToolbar(self.canvas, self)
+        self.vbl = QVBoxLayout()
+        self.vbl.addWidget(self.canvas)
+        self.vbl.addWidget(self.toolbar)
+        self.setLayout(self.vbl)
+
+
+class visAMPSWidget(QWidget):
+    def __init__(self, nrows=1, ncols=1, parent=None):
+        QWidget.__init__(self, parent)
+        self.canvas = MplGridCanvas(nrows=2, ncols=2)
+        self.lasttwinax = self.canvas.axes[1,1].twinx()
         self.toolbar = NavigationToolbar(self.canvas, self)
         self.vbl = QVBoxLayout()
         self.vbl.addWidget(self.canvas)

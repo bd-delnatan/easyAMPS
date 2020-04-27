@@ -14,8 +14,10 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from AMPS.solvers import compute_angles
-from AMPS.viz import visualize_AMPS_solution
+from AMPS import AMPSexperiment
+from AMPS.viz import visualize_AMPS_solution, overview
 from solutionsWidget import SolutionsCheckWidget
+from CustomTable import alert
 from AMPS import _AMPSboundaries
 
 os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
@@ -39,6 +41,20 @@ def toNumber(x):
     return out
 
 
+def checkcolumns(columns):
+    columnset = {"P-SHG", "S-SHG", "P-FLcorr", "S-FLcorr", "TPFratio", "frac_labeled"}
+    inputset = set(columns)
+
+    valid = columnset.issubset(inputset)
+
+    if not valid:
+        missing = list(columnset.intersection(inputset).symmetric_difference(columnset))
+    else:
+        missing = []
+
+    return valid, missing
+
+
 class AppContext(ApplicationContext):
     def run(self):
         window = MainWindow()
@@ -51,33 +67,40 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         super(MainWindow, self).__init__(*args, **kwargs)
 
         self.setupUi(self)
-        self.setWindowTitle("easyAMPS v0.1 (Biodesy, Inc.)")
+        self.maintitle = "easyAMPS v0.1 (Biodesy, Inc.)"
+        self.currentfilepath = None
+
+        self.setWindowTitle(self.maintitle)
 
         # create a toolbar
         toolbar = QToolBar("AMPS toolbar")
         self.addToolBar(toolbar)
 
-        fit_phases_button = QAction("Fit phases", self)
-        fit_phases_button.setStatusTip("Determine phase difference from loaded data")
-        fit_phases_button.triggered.connect(self.determine_phases)
+        fit_phases_button = QAction("Plot 4ch data", self)
+        fit_phases_button.setStatusTip("Plot 4-channel SHG/TPF data from Data Table")
+        fit_phases_button.triggered.connect(self.visualize_4ch)
         toolbar.addAction(fit_phases_button)
 
-        plot_fits_button = QAction("Plot fits", self)
-        plot_fits_button.setStatusTip("Plots the result of phase determination")
-        plot_fits_button.triggered.connect(self.plot_phase_determination)
+        plot_fits_button = QAction("Fit phases", self)
+        plot_fits_button.setStatusTip("Fit phase difference to 4-channel data")
+        plot_fits_button.triggered.connect(self.fit_phase_difference)
         toolbar.addAction(plot_fits_button)
 
         # add some empty dataframe to the angle calculator table
         calcanglesdf = pd.DataFrame(
-            {"SHGratio": [""], "TPFratio": [""], "angle": [""], "distribution": [""],}
+            {"TPFratio": [""], "SHGratio": [""], "angle": [""], "distribution": [""],}
         )
         self.calculatorTableWidget.setDataFrame(calcanglesdf)
 
         # setup connections
         self.actionOpen.triggered.connect(self.openfile)
+        self.actionParse_raw_data.triggered.connect(self.open_parser_dialog)
         self.actionExit.triggered.connect(sys.exit)
-        self.computeAnglesButton.clicked.connect(self.computeAngles)
-        self.checkSolutionsButton.clicked.connect(self.checkSolutions)
+
+        # button connections
+        self.computeAnglesButton.clicked.connect(self.compute_angles)
+        self.checkSolutionsButton.clicked.connect(self.check_solutions)
+        self.correctSHGButton.clicked.connect(self.correct_SHG)
 
     def openfile(self):
         """ File > Open dialog box """
@@ -89,19 +112,174 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         )
 
         if fileName:
+            self.currentfilepath = Path(fileName)
             self.rawdataframe = pd.read_csv(fileName)
             self.tableWidget.setDataFrame(self.rawdataframe)
-
+            newWindowTitle = f"{self.maintitle} : {fileName}"
+            self.setWindowTitle(newWindowTitle)
         else:
             return False
 
-    def determine_phases(self):
-        pass
+    def visualize_4ch(self):
+        # self.visualchecksWidget
+        # get raw data
+        data = self.tableWidget._data_model.df
 
-    def plot_phase_determination(self):
-        pass
+        if data.empty:
 
-    def computeAngles(self):
+            alert("Warning!", "No data is loaded")
+
+            return False
+
+        else:
+
+            columnsOK, missing = checkcolumns(data.columns)
+
+        # do checks on columns
+        if columnsOK:
+
+            # create a shorthand for the internal axes
+            ax = self.visualchecksWidget.canvas.axes
+
+            # last axis for linearity check
+            self.visualchecksWidget.lasttwinax.clear()
+
+            # clear previous plots (if any)
+
+            for axes in ax.flat:
+                axes.cla()
+
+            overview(
+                data,
+                fighandles=(self.visualchecksWidget.canvas.figure, ax),
+                twin_ax=self.visualchecksWidget.lasttwinax,
+            )
+
+            self.visualchecksWidget.canvas.draw()
+
+        else:
+            warnstr = f"Columns : {missing} missing from data table."
+
+            alert("Warning!", warnstr)
+
+    def fit_phase_difference(self):
+
+        data = self.tableWidget._data_model.df
+
+        if self.currentfilepath is not None:
+
+            exptname = self.currentfilepath.stem
+
+        else:
+
+            alert("Warning!", "No file has been loaded")
+            return False
+
+        if data.empty:
+
+            alert("Warning!", "No data is loaded")
+            return False
+
+        else:
+
+            columnsOK, missing = checkcolumns(data.columns)
+
+        if columnsOK:
+            self.experiment = AMPSexperiment(data, name=exptname)
+            self.experiment.fit_phases()
+
+            fitmsg = "P-polarization:\n"
+            fitmsg += self.experiment.Pphases.optres.message
+            fitmsg += "\nS-Polarization:\n"
+            fitmsg += self.experiment.Sphases.optres.message
+
+            alert("Phase determination", fitmsg)
+
+            # extract parameters and put into GUI
+            Pphase = self.experiment.pshg_phase
+            Pphase_sigma = self.experiment.Pphases.optres.params["delphi"].stderr
+            Pphase_error = (
+                np.rad2deg(Pphase_sigma) if Pphase_sigma is not None else np.nan
+            )
+            self.Pphase_sigma_label.setText(f"±{Pphase_error:.2f}")
+            Sphase = self.experiment.sshg_phase
+            Sphase_sigma = self.experiment.Sphases.optres.params["delphi"].stderr
+            Sphase_error = (
+                np.rad2deg(Sphase_sigma) if Sphase_sigma is not None else np.nan
+            )
+            self.Sphase_sigma_label.setText(f"±{Sphase_error:.2f}")
+
+            if Pphase > np.pi / 2.0:
+                # destructive interference
+                self.PinflectionSpinBox.setValue(self.experiment.p_inflection)
+            else:
+                # constructive has no inflection point
+                self.PinflectionSpinBox.setValue(0.0)
+
+            if Sphase > np.pi / 2.0:
+                # destructive intereference
+                self.SinflectionSpinBox.setValue(self.experiment.s_inflection)
+            else:
+                self.SinflectionSpinBox.setValue(0.0)
+
+            Pbg = self.experiment.pshg_bg
+            Sbg = self.experiment.sshg_bg
+
+            self.phasePspinBox.setValue(np.rad2deg(Pphase))
+            self.backgroundPspinBox.setValue(Pbg)
+            self.phaseSspinBox.setValue(np.rad2deg(Sphase))
+            self.backgroundSspinBox.setValue(Sbg)
+
+            # create a shorthand for the internal axes
+            ax = self.visualchecksWidget.canvas.axes
+
+            # last axis for linearity check
+            self.visualchecksWidget.lasttwinax.clear()
+
+            # clear previous plots (if any)
+
+            for axes in ax.flat:
+                axes.cla()
+
+            overview(
+                data,
+                fighandles=(self.visualchecksWidget.canvas.figure, ax),
+                twin_ax=self.visualchecksWidget.lasttwinax,
+                experiment=self.experiment,
+            )
+
+            self.visualchecksWidget.canvas.draw()
+
+    def correct_SHG(self):
+
+        # get phase and background values from GUI
+        phaseP = self.phasePspinBox.value()
+        phaseS = self.phaseSspinBox.value()
+        bgP = self.backgroundPspinBox.value()
+        bgS = self.backgroundSspinBox.value()
+        Pinflection = self.PinflectionSpinBox.value()
+        Sinflection = self.SinflectionSpinBox.value()
+
+        if Pinflection == 0.0:
+            Pinflection = None
+        if Sinflection == 0.0:
+            Sinflection = None
+
+        # create an experiment
+        self.experiment = AMPSexperiment(self.tableWidget._data_model.df, name="wrk")
+        self.experiment.apply_SHG_correction(
+            force_phase_P=phaseP,
+            force_phase_S=phaseS,
+            force_PSHG_bg=bgP,
+            force_SSHG_bg=bgS,
+            P_inflection=Pinflection,
+            S_inflection=Sinflection,
+        )
+
+        self.experiment.compute_SHGratio()
+        self.tableWidget._data_model.df = self.experiment.data
+
+    def compute_angles(self):
         # get data from table
         df = self.calculatorTableWidget.df.copy()
         df["SHGratio"] = df["SHGratio"].astype(float)
@@ -124,7 +302,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.anglecalc_mplwidget.canvas.axes.set_ylim([0.0, 89.9])
         self.anglecalc_mplwidget.canvas.draw()
 
-    def checkSolutions(self):
+    def open_parser_dialog(self):
+        pass
+
+    def check_solutions(self):
 
         # get selected points
         selectedsolutions = self.calculatorTableWidget.selectedIndexes()
@@ -134,8 +315,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         tpfratios = []
 
         for row in selectedrows:
-            _shgratio = self.calculatorTableWidget.df.loc[row, "SHGratio"]
-            _tpfratio = self.calculatorTableWidget.df.loc[row, "TPFratio"]
+            _shgratio = self.calculatorTableWidget._data_model.df.loc[row, "SHGratio"]
+            _tpfratio = self.calculatorTableWidget._data_model.df.loc[row, "TPFratio"]
             if _shgratio != "":
                 shgratios.append(toNumber(_shgratio))
             else:
