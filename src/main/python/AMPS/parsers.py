@@ -2,6 +2,7 @@
 
 import numpy as np
 import pandas as pd
+import re
 from itertools import product
 
 # row look up table
@@ -9,7 +10,7 @@ row2id = {letter: index + 1 for index, letter in enumerate("ABCDEFGHIJKLMNOP")}
 id2row = {index: letter for letter, index in row2id.items()}
 
 
-def form_dilution_block(columns, origin, dilution_factor=2.0 / 3.0):
+def form_dilution_block(columns, origin, dilution_factor=2.0 / 3.0, transpose=False):
     """ returns plate map for dilution series
 
     Args:
@@ -25,7 +26,11 @@ def form_dilution_block(columns, origin, dilution_factor=2.0 / 3.0):
     rowinit = origin[0].upper()
     colinit = int(origin[1:])
 
-    block = np.array(columns).T
+    if transpose:
+        block = np.array(columns).T
+    else:
+        block = np.array(columns)
+
     block = dilution_factor ** (block - 1)
 
     # replace lowest dilution factor with 0
@@ -60,7 +65,7 @@ def get_series(dataframe, series):
     return subset
 
 
-def process_experiment(data, config, experiment_name, save_data=False):
+def process_experiment(data, config, experiment_name, transpose_block=False):
     datadict = {}
 
     for experiment, exptconfig in config[experiment_name].items():
@@ -77,7 +82,7 @@ def process_experiment(data, config, experiment_name, save_data=False):
 
         if len(origins) > 1:
             for origin in origins:
-                dilution_map = form_dilution_block(pattern, origin)
+                dilution_map = form_dilution_block(pattern, origin, transpose=transpose_block)
                 df = get_series(data, dilution_map)
                 # zero-shift fluorescence
                 pfl_bg = df.query("frac_labeled == 0")["P-FLcorr"].mean()
@@ -106,3 +111,35 @@ def process_experiment(data, config, experiment_name, save_data=False):
             datadict[experiment] = df
 
     return datadict
+
+
+def validate_well_coordinates(wclist):
+
+    # will contain a list of bool
+    tflist = []
+    # wells that are invalid
+    invalidlist = []
+
+    wellptn = re.compile("[a-pA-P][0-9]{1,2}")
+
+    for well in wclist:
+        m = wellptn.match(well)
+        # check validity of well coordinate format
+        ok = bool(m)
+
+        if ok:
+            # then check if well fits within 384-well
+            rowchar = well[0]
+            colnum = int(well[1:])
+
+            if 0 < colnum < 25:
+                tflist.append(True)
+            else:
+                tflist.append(False)
+                invalidlist.append(well)
+
+        elif not ok:
+            tflist.append(False)
+            invalidlist.append(well)
+
+    return all(tflist), invalidlist

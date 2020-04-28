@@ -2,7 +2,6 @@ from PyQt5.QtWidgets import QDialog, QHBoxLayout
 from MplWidgets import matplotlibWidget
 
 
-
 class SolutionsCheckWidget(QDialog):
     """ A 1-by-2 plotting widget """
     def __init__(self, parent=None):

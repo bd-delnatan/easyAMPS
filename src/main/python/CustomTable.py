@@ -258,20 +258,31 @@ class DataFrameWidget(QTableView):
             self.df.columns = newcolumns
 
     def removeSelectedRows(self):
-        selected_rows = sorted(list(set([sel.row() for sel in self.selectedIndexes()])))
+        # get the number of rows
+        Nrows = self._data_model.df.shape[0]
 
-        while len(selected_rows) > 0:
-            target = selected_rows.pop()
-            self._data_model.removeRows(target)
+        if Nrows > 1:
+            selected_rows = sorted(list(set([sel.row() for sel in self.selectedIndexes()])))
+
+            while len(selected_rows) > 0:
+                target = selected_rows.pop()
+                self._data_model.removeRows(target)
+        else:
+            alert("Warning", "Can't remove the only remaining row.")
 
     def removeSelectedColumns(self):
-        selected_columns = sorted(
-            list(set([sel.column() for sel in self.selectedIndexes()]))
-        )
+        Ncolumns = self._data_model.df.shape[1]
 
-        while len(selected_columns) > 0:
-            target = selected_columns.pop()
-            self._data_model.removeColumns(target)
+        if Ncolumns > 1:
+            selected_columns = sorted(
+                list(set([sel.column() for sel in self.selectedIndexes()]))
+            )
+
+            while len(selected_columns) > 0:
+                target = selected_columns.pop()
+                self._data_model.removeColumns(target)
+        else:
+            alert("Warning", "Can't remove the only remaining column.")
 
 
 class DataFrameModel(QAbstractTableModel):

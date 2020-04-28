@@ -1,9 +1,7 @@
-from PyQt5 import uic
 from PyQt5.QtWidgets import (
     QMainWindow,
     QFileDialog,
     QAction,
-    QStatusBar,
     QToolBar,
 )
 from fbs_runtime.application_context.PyQt5 import ApplicationContext
@@ -12,22 +10,18 @@ import sys
 import os
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 from AMPS.solvers import compute_angles
-from AMPS import AMPSexperiment
 from AMPS.viz import visualize_AMPS_solution, overview
 from solutionsWidget import SolutionsCheckWidget
+from scriptWriter import ScriptWriterDialog
 from CustomTable import alert
 from AMPS import _AMPSboundaries
+from easyAMPS_maingui import Ui_MainWindow
 
+# needed to properly scale high DPI screens in Windows OS
 os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
 
-root = Path(__file__).parent
-
-Ui_MainWindow, QtBaseClass = uic.loadUiType(str(root / "easyAMPS_maingui.ui"))
-
-plt.style.use(str(root / "delnatan.mplstyle"))
-
+# Ui_MainWindow, QtBaseClass = uic.loadUiType(str(root / "easyAMPS_maingui.ui"))
 
 def toNumber(x):
 
@@ -42,13 +36,22 @@ def toNumber(x):
 
 
 def checkcolumns(columns):
-    columnset = {"P-SHG", "S-SHG", "P-FLcorr", "S-FLcorr", "TPFratio", "frac_labeled"}
+    columnset = {
+        "P-SHG",
+        "S-SHG",
+        "P-FLcorr",
+        "S-FLcorr",
+        "TPFratio",
+        "frac_labeled",
+    }
     inputset = set(columns)
 
     valid = columnset.issubset(inputset)
 
     if not valid:
-        missing = list(columnset.intersection(inputset).symmetric_difference(columnset))
+        missing = list(
+            columnset.intersection(inputset).symmetric_difference(columnset)
+        )
     else:
         missing = []
 
@@ -65,10 +68,12 @@ class AppContext(ApplicationContext):
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, *args, obj=None, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
-
         self.setupUi(self)
         self.maintitle = "easyAMPS v0.1 (Biodesy, Inc.)"
         self.currentfilepath = None
+
+        # To make Mac/Windows more coherent disable Native Mac menubar
+        self.menuBar().setNativeMenuBar(False)
 
         self.setWindowTitle(self.maintitle)
 
@@ -77,7 +82,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.addToolBar(toolbar)
 
         fit_phases_button = QAction("Plot 4ch data", self)
-        fit_phases_button.setStatusTip("Plot 4-channel SHG/TPF data from Data Table")
+        fit_phases_button.setStatusTip(
+            "Plot 4-channel SHG/TPF data from Data Table"
+        )
         fit_phases_button.triggered.connect(self.visualize_4ch)
         toolbar.addAction(fit_phases_button)
 
@@ -88,13 +95,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # add some empty dataframe to the angle calculator table
         calcanglesdf = pd.DataFrame(
-            {"TPFratio": [""], "SHGratio": [""], "angle": [""], "distribution": [""],}
+            {
+                "TPFratio": [""],
+                "SHGratio": [""],
+                "angle": [""],
+                "distribution": [""],
+            }
         )
         self.calculatorTableWidget.setDataFrame(calcanglesdf)
 
         # setup connections
         self.actionOpen.triggered.connect(self.openfile)
-        self.actionParse_raw_data.triggered.connect(self.open_parser_dialog)
+        self.actionSaveCSV.triggered.connect(self.savefile)
+        self.actionAMPS_script_editor.triggered.connect(
+            self.open_AMPS_script_editor
+        )
         self.actionExit.triggered.connect(sys.exit)
 
         # button connections
@@ -119,6 +134,36 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.setWindowTitle(newWindowTitle)
         else:
             return False
+
+    def savefile(self):
+
+        data = self.tableWidget._data_model.df
+
+        if data.empty:
+            alert("Warning", "Data table is empty")
+        else:
+            options = QFileDialog.Options()
+            options |= QFileDialog.DontUseNativeDialog
+            fileName, fileType = QFileDialog.getSaveFileName(
+                self,
+                "Save data table",
+                "",
+                "CSV files (*.csv);;Excel file (*.xlsx)",
+                options=options,
+            )
+
+            extension = ".csv" if "CSV" in fileType else ".xlsx"
+            targetfile = Path(fileName).with_suffix(extension)
+
+            if extension == ".csv":
+                data.to_csv(targetfile, index=False)
+            elif extension == ".xlsx":
+                data.to_excel(targetfile, index=False)
+
+    def open_AMPS_script_editor(self):
+
+        scripteditor_dialog = ScriptWriterDialog()
+        scripteditor_dialog.exec_()
 
     def visualize_4ch(self):
         # self.visualchecksWidget
@@ -197,13 +242,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             # extract parameters and put into GUI
             Pphase = self.experiment.pshg_phase
-            Pphase_sigma = self.experiment.Pphases.optres.params["delphi"].stderr
+            Pphase_sigma = self.experiment.Pphases.optres.params[
+                "delphi"
+            ].stderr
             Pphase_error = (
                 np.rad2deg(Pphase_sigma) if Pphase_sigma is not None else np.nan
             )
             self.Pphase_sigma_label.setText(f"±{Pphase_error:.2f}")
             Sphase = self.experiment.sshg_phase
-            Sphase_sigma = self.experiment.Sphases.optres.params["delphi"].stderr
+            Sphase_sigma = self.experiment.Sphases.optres.params[
+                "delphi"
+            ].stderr
             Sphase_error = (
                 np.rad2deg(Sphase_sigma) if Sphase_sigma is not None else np.nan
             )
@@ -266,7 +315,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             Sinflection = None
 
         # create an experiment
-        self.experiment = AMPSexperiment(self.tableWidget._data_model.df, name="wrk")
+        self.experiment = AMPSexperiment(
+            self.tableWidget._data_model.df, name="wrk"
+        )
         self.experiment.apply_SHG_correction(
             force_phase_P=phaseP,
             force_phase_S=phaseS,
@@ -302,9 +353,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.anglecalc_mplwidget.canvas.axes.set_ylim([0.0, 89.9])
         self.anglecalc_mplwidget.canvas.draw()
 
-    def open_parser_dialog(self):
-        pass
-
     def check_solutions(self):
 
         # get selected points
@@ -315,8 +363,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         tpfratios = []
 
         for row in selectedrows:
-            _shgratio = self.calculatorTableWidget._data_model.df.loc[row, "SHGratio"]
-            _tpfratio = self.calculatorTableWidget._data_model.df.loc[row, "TPFratio"]
+            _shgratio = self.calculatorTableWidget._data_model.df.loc[
+                row, "SHGratio"
+            ]
+            _tpfratio = self.calculatorTableWidget._data_model.df.loc[
+                row, "TPFratio"
+            ]
             if _shgratio != "":
                 shgratios.append(toNumber(_shgratio))
             else:
