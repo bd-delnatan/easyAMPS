@@ -10,7 +10,9 @@ import sys
 import os
 import pandas as pd
 import numpy as np
+import matplotlib as mpl
 from AMPS.solvers import compute_angles
+from AMPS import AMPSexperiment
 from AMPS.viz import visualize_AMPS_solution, overview
 from solutionsWidget import SolutionsCheckWidget
 from scriptWriter import ScriptWriterDialog
@@ -22,6 +24,15 @@ from easyAMPS_maingui import Ui_MainWindow
 os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
 
 # Ui_MainWindow, QtBaseClass = uic.loadUiType(str(root / "easyAMPS_maingui.ui"))
+mpl.rc(
+    "font",
+    **{
+        "size": 10,
+        "family": "sans-serif",
+    },
+)
+mpl.pyplot.style.use("bmh")
+
 
 def toNumber(x):
 
@@ -100,9 +111,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 "SHGratio": [""],
                 "angle": [""],
                 "distribution": [""],
+                "label": [""]
             }
         )
         self.calculatorTableWidget.setDataFrame(calcanglesdf)
+
+        # initialize empty dataframe with the minimum column headers
+        emptydataframe = pd.DataFrame(
+            {
+                "P-SHG": [""],
+                "S-SHG": [""],
+                "P-FLcorr": [""],
+                "S-FLcorr": [""],
+                "frac_labeled": [""],
+                "TPFratio": [""],
+            }
+        )
+        self.tableWidget.setDataFrame(emptydataframe)
 
         # setup connections
         self.actionOpen.triggered.connect(self.openfile)
@@ -171,14 +196,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         data = self.tableWidget._data_model.df
 
         if data.empty:
-
             alert("Warning!", "No data is loaded")
-
             return False
-
         else:
-
             columnsOK, missing = checkcolumns(data.columns)
+            fraclabeled = data["frac_labeled"].unique().tolist()
+
+            if not columnsOK:
+                alert("Warning!", f"Columns {missing} are missing")
+                return False
+
+            if len(fraclabeled) < 3:
+                alert("Warning!", f"You need at least 2 frac_labeled")
+                return False
 
         # do checks on columns
         if columnsOK:
@@ -200,7 +230,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 twin_ax=self.visualchecksWidget.lasttwinax,
             )
 
-            self.visualchecksWidget.canvas.draw()
+            self.visualchecksWidget.canvas.refresh()
 
         else:
             warnstr = f"Columns : {missing} missing from data table."
@@ -212,22 +242,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         data = self.tableWidget._data_model.df
 
         if self.currentfilepath is not None:
-
             exptname = self.currentfilepath.stem
-
         else:
-
-            alert("Warning!", "No file has been loaded")
-            return False
+            exptname = "DataNotLoaded"
 
         if data.empty:
-
             alert("Warning!", "No data is loaded")
             return False
-
         else:
-
             columnsOK, missing = checkcolumns(data.columns)
+            fraclabeled = data["frac_labeled"].unique().tolist()
+
+            if not columnsOK:
+                alert("Warning!", f"Columns {missing} are missing")
+                return False
+
+            if len(fraclabeled) < 3:
+                alert("Warning!", f"You need at least 2 frac_labeled")
+                return False
 
         if columnsOK:
             self.experiment = AMPSexperiment(data, name=exptname)
@@ -297,7 +329,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 experiment=self.experiment,
             )
 
-            self.visualchecksWidget.canvas.draw()
+            self.visualchecksWidget.canvas.refresh()
 
     def correct_SHG(self):
 
@@ -343,15 +375,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.calculatorTableWidget.resizeColumnsToContents()
 
         self.anglecalc_mplwidget.canvas.axes.clear()
-        self.anglecalc_mplwidget.canvas.axes.plot(
-            sol["distribution"].values, sol["angle"].values, "o", c="darkred"
-        )
+
+        unique_labels = df["label"].unique().tolist()
+
+        for label in unique_labels:
+            wrk = df[df["label"] == label]
+            self.anglecalc_mplwidget.canvas.axes.plot(
+                wrk["distribution"].values, wrk["angle"].values, "o", label=label
+            )
+
+        self.anglecalc_mplwidget.canvas.axes.legend(bbox_to_anchor=(1.10, 0.95), fontsize=8.5)
 
         self.anglecalc_mplwidget.canvas.axes.set_xlabel("distribution")
         self.anglecalc_mplwidget.canvas.axes.set_ylabel("angle")
         self.anglecalc_mplwidget.canvas.axes.set_xlim([2.0, 70.0])
         self.anglecalc_mplwidget.canvas.axes.set_ylim([0.0, 89.9])
-        self.anglecalc_mplwidget.canvas.draw()
+        self.anglecalc_mplwidget.canvas.refresh()
 
     def check_solutions(self):
 

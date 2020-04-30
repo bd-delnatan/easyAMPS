@@ -176,7 +176,7 @@ class Ui_MainWindow(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.calculatorTableWidget.sizePolicy().hasHeightForWidth())
         self.calculatorTableWidget.setSizePolicy(sizePolicy)
-        self.calculatorTableWidget.setMinimumSize(QtCore.QSize(320, 100))
+        self.calculatorTableWidget.setMinimumSize(QtCore.QSize(350, 100))
         self.calculatorTableWidget.setObjectName("calculatorTableWidget")
         self.horizontalLayout.addWidget(self.calculatorTableWidget)
         self.verticalLayout = QtWidgets.QVBoxLayout()

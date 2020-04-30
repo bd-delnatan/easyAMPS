@@ -3,8 +3,25 @@
 import warnings
 from scipy.optimize import root, minimize
 from .functions import nSHGratio, nTPFratio
-from numpy import rad2deg, nan, isnan
+from numpy import rad2deg, deg2rad, exp, nan, isnan, unravel_index, argmax
 from pandas import Series
+from . import __path__
+from pathlib import Path
+import pickle
+
+p = Path(__path__[0])
+
+with open(Path(p) / "SHGlookuptable.pickle", "rb") as fhd:
+    _shglut = pickle.load(fhd)
+
+with open(Path(p) / "TPFlookuptable.pickle", "rb") as fhd:
+    _tpflut = pickle.load(fhd)
+
+# generate low-resolution look up table
+_shgmap = _shglut["map"][::4, ::4]
+_tpfmap = _tpflut["map"][::4, ::4]
+_angles = _shglut["angles"][::4]
+_dist = _shglut["distributions"][::4]
 
 
 def objective(p, rshg_obs, rtpf_obs):
@@ -18,6 +35,17 @@ def objective(p, rshg_obs, rtpf_obs):
     """
     μ, σ = p
     return [rshg_obs - nSHGratio(μ, σ), rtpf_obs - nTPFratio(μ, σ)]
+
+
+def approximate_lookup(rshg, rtpf):
+
+    llshg = (_shgmap - rshg) ** 2
+    lltpf = (_tpfmap - rtpf) ** 2
+    ll = exp(-(llshg + lltpf))
+    i, j = unravel_index(argmax(ll, axis=None), ll.shape)
+    appx_angle, appx_dist = deg2rad(_angles[i]), deg2rad(_dist[j])
+
+    return appx_angle, appx_dist
 
 
 def objective2(x0, rshg_obs, rtpf_obs, fresnel_ratio=1.88):
@@ -37,9 +65,11 @@ def solve_cons_AMPS(rshg, rtpf, silent=True, unit="degree"):
             print(f"Skipping ... SHG-ratio {rshg:.3f}, TPF-ratio {rtpf:.3f}")
         return nan, nan
 
+    guess = approximate_lookup(rshg, rtpf)
+
     resopt = minimize(
         objective2,
-        [0.5, 0.43],
+        guess,
         args=(rshg, rtpf),
         method="SLSQP",
         bounds=((1e-3, 1.57), (3.5e-2, 1.484)),
@@ -82,7 +112,8 @@ def solve_AMPS(rshg, rtpf, tolerance=1e-4, unit="degree", silent=True):
         return nan, nan
 
     try:
-        sol = root(objective, [0.5, 0.43], args=(rshg, rtpf), tol=tolerance)
+        guess = approximate_lookup(rshg, rtpf)
+        sol = root(objective, guess, args=(rshg, rtpf), tol=tolerance)
     except ZeroDivisionError:
         if not silent:
             print(

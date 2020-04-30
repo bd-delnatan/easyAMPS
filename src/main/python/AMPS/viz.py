@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from AMPS import AMPSexperiment
 from pandas import DataFrame
-from . import _shglut, _tpflut, _AMPSboundaries
+from . import _shglut, _tpflut
 
 
 def place_in_range(vec, frac):
@@ -230,7 +230,7 @@ def overview(data, figsize=(8, 6.25), experiment=None, fighandles=None, twin_ax=
     ax[1, 0].tick_params(axis="x", which="major", labelsize=7)
 
     if twin_ax is None:
-        twin_ax = ax[1,1].twinx()
+        twin_ax = ax[1, 1].twinx()
 
     linearity_check(stats, ax[1, 1], twinax=twin_ax)
 

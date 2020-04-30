@@ -24,5 +24,5 @@ class SolutionsCheckWidget(QDialog):
 
         self.figure1.canvas.figure.tight_layout()
         self.figure2.canvas.figure.tight_layout()
-        self.figure1.canvas.draw()
-        self.figure2.canvas.draw()
+        self.figure1.canvas.refresh()
+        self.figure2.canvas.refresh()

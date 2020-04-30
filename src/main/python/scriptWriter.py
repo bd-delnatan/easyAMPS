@@ -372,7 +372,7 @@ class ScriptWriterDialog(QDialog):
                     print(timepoints)
                     print("Using the last one : ", lastread)
 
-                    data = alldata[alldata["Read #"] == lastread].copy()
+                    data = alldata
 
                     subtract_blank_fluorescence(data, blank)
                     datadict = process_experiment(data, scriptconfig, expt_key, transpose_block=False)
