@@ -1,0 +1,10 @@
+**/.DS_Store
+.DS_Store
+target/
+**/__pycache__/
+**/*.pyc
+**/*.sublime-workspace
+**/*.sublime-project
+**/*.manifest
+**/*.spec
+**/*.swp
