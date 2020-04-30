@@ -125,7 +125,7 @@ STYLES = {
     "numbers": format([100, 150, 190]),
     "spaces": format("gray", background=[230, 230, 230]),
     "special": format("green", "bold"),
-    "reserved": format([219, 42, 101])
+    "reserved": format([219, 42, 101]),
 }
 
 
@@ -166,13 +166,11 @@ class ScriptHighlighter(QSyntaxHighlighter):
         ]
 
         rules += [
-            (r"{:s}".format(b), 0, STYLES["brace"])
-            for b in ScriptHighlighter.braces
+            (r"{:s}".format(b), 0, STYLES["brace"]) for b in ScriptHighlighter.braces
         ]
 
         rules += [
-            (r"{:s}".format(b), 0, STYLES["spaces"])
-            for b in ScriptHighlighter.spaces
+            (r"{:s}".format(b), 0, STYLES["spaces"]) for b in ScriptHighlighter.spaces
         ]
 
         rules += [
@@ -192,9 +190,7 @@ class ScriptHighlighter(QSyntaxHighlighter):
 
         self.rules = [(QRegExp(pat), index, fmt) for (pat, index, fmt) in rules]
 
-        self.wellrx = QRegExp(
-            r"(?:origins:)(?:\s*)((\s?[A-P][1-9][0-9]?)(?:,)?)+"
-        )
+        self.wellrx = QRegExp(r"(?:origins:)(?:\s*)((\s?[A-P][1-9][0-9]?)(?:,)?)+")
         self.wellfmt = STYLES["special"]
 
     def highlightBlock(self, text):
@@ -238,7 +234,7 @@ class ScriptWriterDialog(QDialog):
         self.editor = QPlainTextEdit()
         self.editor.setFont(font)
         self.editor.setPlainText(templatestr)
-        self.editor.setTabStopWidth(self.editor.fontMetrics().width(" ") * 2)
+        self.editor.setTabStopWidth(self.editor.fontMetrics().width(" ") * 4)
         # access the 'text' of QPlainTextEdit by
         self.highlight = ScriptHighlighter(self.editor.document())
 
@@ -362,9 +358,7 @@ class ScriptWriterDialog(QDialog):
                     )
                     continue
                 else:
-                    alldata = read_detail(
-                        experiments[expt_key], label_rows=False
-                    )
+                    alldata = read_detail(experiments[expt_key], label_rows=False)
                     timepoints = alldata["Read #"].unique().tolist()
                     lastread = timepoints[-1]
 
@@ -375,7 +369,9 @@ class ScriptWriterDialog(QDialog):
                     data = alldata
 
                     subtract_blank_fluorescence(data, blank)
-                    datadict = process_experiment(data, scriptconfig, expt_key, transpose_block=False)
+                    datadict = process_experiment(
+                        data, scriptconfig, expt_key, transpose_block=False
+                    )
 
                     for name, dataframe in datadict.items():
                         output_filename = f"{name}.csv"
