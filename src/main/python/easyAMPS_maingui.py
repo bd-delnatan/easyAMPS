@@ -2,13 +2,11 @@
 
 # Form implementation generated from reading ui file 'easyAMPS_maingui.ui'
 #
-# Created by: PyQt5 UI code generator 5.14.2
+# Created by: PyQt5 UI code generator 5.9.2
 #
 # WARNING! All changes made in this file will be lost!
 
-
 from PyQt5 import QtCore, QtGui, QtWidgets
-
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -171,12 +169,13 @@ class Ui_MainWindow(object):
         self.horizontalLayout = QtWidgets.QHBoxLayout(self.tab_4)
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.calculatorTableWidget = DataFrameWidget(self.tab_4)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.calculatorTableWidget.sizePolicy().hasHeightForWidth())
         self.calculatorTableWidget.setSizePolicy(sizePolicy)
         self.calculatorTableWidget.setMinimumSize(QtCore.QSize(350, 100))
+        self.calculatorTableWidget.setMaximumSize(QtCore.QSize(500, 16777215))
         self.calculatorTableWidget.setObjectName("calculatorTableWidget")
         self.horizontalLayout.addWidget(self.calculatorTableWidget)
         self.verticalLayout = QtWidgets.QVBoxLayout()
@@ -249,7 +248,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuTools.menuAction())
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(2)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -283,5 +282,6 @@ class Ui_MainWindow(object):
         self.actionExit.setText(_translate("MainWindow", " &Exit"))
         self.actionExit.setShortcut(_translate("MainWindow", "Ctrl+Q"))
         self.actionAMPS_script_editor.setText(_translate("MainWindow", "AMPS script editor"))
+
 from CustomTable import DataFrameWidget
 from MplWidgets import matplotlibWidget, visAMPSWidget
