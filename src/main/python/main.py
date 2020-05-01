@@ -104,7 +104,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         plot_fits_button.setStatusTip("Fit phase difference to 4-channel data")
         plot_fits_button.triggered.connect(self.fit_phase_difference)
         toolbar.addAction(plot_fits_button)
-    
+
 
         peek_data_button = QAction("Peek at data", self)
         peek_data_button.triggered.connect(self.peek_at_table)
@@ -152,6 +152,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         df = self.tableWidget._data_model.df.apply(
             pd.to_numeric, errors="ignore"
         )
+        print(df)
 
     def openfile(self):
         """ File > Open dialog box """
@@ -345,8 +346,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def correct_SHG(self):
 
         # get phase and background values from GUI
-        phaseP = self.phasePspinBox.value()
-        phaseS = self.phaseSspinBox.value()
+        # convert to radians
+        phaseP = self.phasePspinBox.value() * np.pi / 180.0
+        phaseS = self.phaseSspinBox.value() * np.pi / 180.0
         bgP = self.backgroundPspinBox.value()
         bgS = self.backgroundSspinBox.value()
         Pinflection = self.PinflectionSpinBox.value()
@@ -367,7 +369,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         correct_SHG(df, bgP, bgS, phaseP, phaseS, p_signs, s_signs)
         df["SHGratio"] = df["P-SHGcorr"] / df["S-SHGcorr"]
 
-        self.tableWidget._data_model.df = df.copy() 
+        self.tableWidget._data_model.df = df.copy()
 
     def compute_angles(self):
         # get data from table

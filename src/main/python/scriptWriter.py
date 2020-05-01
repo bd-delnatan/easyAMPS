@@ -124,6 +124,7 @@ STYLES = {
     "comment": format("gray", "italic"),
     "numbers": format([100, 150, 190]),
     "spaces": format("gray", background=[230, 230, 230]),
+    "tabs": format("gray", background=[255, 0, 0]),
     "special": format("green", "bold"),
     "reserved": format([219, 42, 101]),
 }
@@ -133,7 +134,8 @@ class ScriptHighlighter(QSyntaxHighlighter):
     toplevel = ["directories", "experiments", "patterns"]
     sublevel = ["input", "output", "blank", "origins", "pattern", "exclude"]
     operators = [":"]
-    spaces = [r"\t", r"\s{2}"]
+    spaces = [r"\s{4}"]
+    tabs = [r"\t"]
     reserved = [r"!!python/list"]
 
     braces = [
@@ -171,6 +173,10 @@ class ScriptHighlighter(QSyntaxHighlighter):
 
         rules += [
             (r"{:s}".format(b), 0, STYLES["spaces"]) for b in ScriptHighlighter.spaces
+        ]
+
+        rules += [
+            (r"{:s}".format(b), 0, STYLES["tabs"]) for b in ScriptHighlighter.tabs
         ]
 
         rules += [
@@ -246,11 +252,13 @@ class ScriptWriterDialog(QDialog):
         self.stdoutbox.setFixedHeight(150)
 
         self.loadScriptButton = QPushButton("Load script")
+        self.checkSpacesButton = QPushButton("Convert tabs")
         self.saveScriptButton = QPushButton("Save script")
         self.runScriptButton = QPushButton("Run Script")
 
         self.buttonsLayout = QHBoxLayout()
         self.buttonsLayout.addWidget(self.loadScriptButton)
+        self.buttonsLayout.addWidget(self.checkSpacesButton)
         self.buttonsLayout.addWidget(self.saveScriptButton)
         self.buttonsLayout.addWidget(self.runScriptButton)
 
@@ -271,6 +279,7 @@ class ScriptWriterDialog(QDialog):
 
     def setup_button_behavior(self):
         self.loadScriptButton.clicked.connect(self.loadscript)
+        self.checkSpacesButton.clicked.connect(self.converttabs)
         self.saveScriptButton.clicked.connect(self.savescript)
         self.runScriptButton.clicked.connect(self.runscript)
 
@@ -292,15 +301,31 @@ class ScriptWriterDialog(QDialog):
 
             # raw text is loaded too
             with open(self.currentfilepath, "rt") as fhd:
-                self.scriptbody = "".join(fhd.readlines())
+                scriptbody = "".join(fhd.readlines())
 
-            self.editor.setPlainText(self.scriptbody)
+            self.editor.setPlainText(scriptbody)
 
             print("Script is loaded.")
 
         else:
             return False
         pass
+
+    def converttabs(self):
+        scriptbody = self.editor.toPlainText()
+        scriptbody = scriptbody.replace("\t", "    ")
+        print("Tabs have been replaced by spaces, check the script")
+        # get current cursor position
+        cursor = self.editor.textCursor()
+        newcursor = self.editor.cursorForPosition(cursor.position())
+        currentpos = newcursor.position()
+        print("position : ", currentpos)
+
+        # load the replaced script
+        self.editor.setPlainText(scriptbody)
+
+        self.editor.setTextCursor(newcursor)
+        self.editor.ensureCursorVisible()
 
     def savescript(self):
         options = QFileDialog.Options()
@@ -317,6 +342,9 @@ class ScriptWriterDialog(QDialog):
         # get text body
         scriptbody = self.editor.toPlainText()
 
+        # replace tabs with spaces
+        scriptbody = scriptbody.replace("\t", "    ")
+
         with open(targetfile, "wt") as fhd:
             fhd.write(scriptbody)
 
@@ -325,6 +353,7 @@ class ScriptWriterDialog(QDialog):
     def runscript(self):
         """ Execute script from editor """
         scriptbody = self.editor.toPlainText()
+        scriptbody = scriptbody.replace("\t", "    ")
         scriptconfig = yaml.load(scriptbody, Loader=yaml.FullLoader)
 
         print("Running script  ...")
