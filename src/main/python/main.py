@@ -150,7 +150,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def peek_at_table(self):
         df = self.tableWidget._data_model.df.apply(
-            pd.to_numeric, errors="coerce"
+            pd.to_numeric, errors="ignore"
         )
 
     def openfile(self):
