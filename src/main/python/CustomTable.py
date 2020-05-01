@@ -125,6 +125,9 @@ class DataFrameWidget(QTableView):
             entry = sel.data()
             if entry:
                 container.at[row, col] = entry
+            else:
+                # if cell empty, fill with nan
+                container.at[row, col] = nan
 
         str2copy = "\n".join(
             ["\t".join([f"{r}" for r in row]) for row in container.values]
