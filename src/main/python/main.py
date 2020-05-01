@@ -358,7 +358,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             Sinflection = None
 
         df = self.tableWidget._data_model.df.apply(
-            pd.to_numeric, errors="coerce"
+            pd.to_numeric, errors="ignore"
         )
 
         p_signs = return_signs(df["P-FLcorr"].values, Pinflection)
