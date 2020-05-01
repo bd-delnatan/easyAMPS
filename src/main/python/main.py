@@ -12,8 +12,9 @@ import pandas as pd
 import numpy as np
 import matplotlib as mpl
 from AMPS.solvers import compute_angles
-from AMPS import AMPSexperiment
+from AMPS import AMPSexperiment, return_signs
 from AMPS.viz import visualize_AMPS_solution, overview
+from PyBiodesy.DataStructures import correct_SHG
 from solutionsWidget import SolutionsCheckWidget
 from scriptWriter import ScriptWriterDialog
 from CustomTable import alert
@@ -103,6 +104,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         plot_fits_button.setStatusTip("Fit phase difference to 4-channel data")
         plot_fits_button.triggered.connect(self.fit_phase_difference)
         toolbar.addAction(plot_fits_button)
+    
+
+        peek_data_button = QAction("Peek at data", self)
+        peek_data_button.triggered.connect(self.peek_at_table)
+        toolbar.addAction(peek_data_button)
 
         # add some empty dataframe to the angle calculator table
         calcanglesdf = pd.DataFrame(
@@ -141,6 +147,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.computeAnglesButton.clicked.connect(self.compute_angles)
         self.checkSolutionsButton.clicked.connect(self.check_solutions)
         self.correctSHGButton.clicked.connect(self.correct_SHG)
+
+    def peek_at_table(self):
+        df = self.tableWidget._data_model.df.apply(
+            pd.to_numeric, errors="coerce"
+        )
 
     def openfile(self):
         """ File > Open dialog box """
@@ -346,21 +357,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if Sinflection == 0.0:
             Sinflection = None
 
-        # create an experiment
-        self.experiment = AMPSexperiment(
-            self.tableWidget._data_model.df, name="wrk"
-        )
-        self.experiment.apply_SHG_correction(
-            force_phase_P=phaseP,
-            force_phase_S=phaseS,
-            force_PSHG_bg=bgP,
-            force_SSHG_bg=bgS,
-            P_inflection=Pinflection,
-            S_inflection=Sinflection,
+        df = self.tableWidget._data_model.df.apply(
+            pd.to_numeric, errors="coerce"
         )
 
-        self.experiment.compute_SHGratio()
-        self.tableWidget._data_model.df = self.experiment.data
+        p_signs = return_signs(df["P-FLcorr"].values, Pinflection)
+        s_signs = return_signs(df["S-FLcorr"].values, Sinflection)
+
+        correct_SHG(df, bgP, bgS, phaseP, phaseS, p_signs, s_signs)
+        df["SHGratio"] = df["P-SHGcorr"] / df["S-SHGcorr"]
+
+        self.tableWidget._data_model.df = df.copy() 
 
     def compute_angles(self):
         # get data from table

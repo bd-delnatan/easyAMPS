@@ -1,5 +1,5 @@
 # import AMPSexperiment data structure
-from .AMPSexperiment import AMPSexperiment, explore_background
+from .AMPSexperiment import AMPSexperiment, explore_background, return_signs
 from .solvers import solve_AMPS
 from pandas import read_csv
 import pickle
