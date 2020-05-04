@@ -187,9 +187,9 @@ class ScriptHighlighter(QSyntaxHighlighter):
         # strings
         rules += [
             # double quoted strings
-            (r'"[^"\\]*(\\.[^"\\]*)*"', 0, STYLES["string"]),
+            (r'"[^"/]*(/.[^"/]*)*"', 0, STYLES["string"]),
             # single quoted strings
-            (r"'[^'\\]*(\\.[^'\\]*)*'", 0, STYLES["string"]),
+            (r"'[^'/]*(/.[^'/]*)*'", 0, STYLES["string"]),
             # comment
             (r"#[^\n]*", 0, STYLES["comment"]),
         ]
@@ -235,7 +235,7 @@ class ScriptWriterDialog(QDialog):
 
         font = QFontDatabase.systemFont(QFontDatabase.FixedFont)
         font.setFixedPitch(True)
-        font.setPointSize(13)
+        font.setPointSize(10)
 
         self.editor = QPlainTextEdit()
         self.editor.setFont(font)
@@ -255,12 +255,14 @@ class ScriptWriterDialog(QDialog):
         self.checkSpacesButton = QPushButton("Convert tabs")
         self.saveScriptButton = QPushButton("Save script")
         self.runScriptButton = QPushButton("Run Script")
+        self.dangerButton = QPushButton("Danger!")
 
         self.buttonsLayout = QHBoxLayout()
         self.buttonsLayout.addWidget(self.loadScriptButton)
         self.buttonsLayout.addWidget(self.checkSpacesButton)
         self.buttonsLayout.addWidget(self.saveScriptButton)
         self.buttonsLayout.addWidget(self.runScriptButton)
+        self.buttonsLayout.addWidget(self.dangerButton)
 
         self.layout = QVBoxLayout()
 
@@ -282,6 +284,7 @@ class ScriptWriterDialog(QDialog):
         self.checkSpacesButton.clicked.connect(self.converttabs)
         self.saveScriptButton.clicked.connect(self.savescript)
         self.runScriptButton.clicked.connect(self.runscript)
+        self.dangerButton.clicked.connect(self.rundanger)
 
     def loadscript(self):
         options = QFileDialog.Options()
@@ -314,18 +317,17 @@ class ScriptWriterDialog(QDialog):
     def converttabs(self):
         scriptbody = self.editor.toPlainText()
         scriptbody = scriptbody.replace("\t", "    ")
+
         print("Tabs have been replaced by spaces, check the script")
+
         # get current cursor position
         cursor = self.editor.textCursor()
-        newcursor = self.editor.cursorForPosition(cursor.position())
-        currentpos = newcursor.position()
-        print("position : ", currentpos)
+        cursor.beginEditBlock()
 
         # load the replaced script
         self.editor.setPlainText(scriptbody)
 
-        self.editor.setTextCursor(newcursor)
-        self.editor.ensureCursorVisible()
+        cursor.endEditBlock()
 
     def savescript(self):
         options = QFileDialog.Options()
@@ -337,18 +339,20 @@ class ScriptWriterDialog(QDialog):
             "YAML file (*.yaml)",
             options=options,
         )
-        targetfile = Path(fileName).with_suffix(".yaml")
 
-        # get text body
-        scriptbody = self.editor.toPlainText()
+        if fileName:
+            targetfile = Path(fileName).with_suffix(".yaml")
 
-        # replace tabs with spaces
-        scriptbody = scriptbody.replace("\t", "    ")
+            # get text body
+            scriptbody = self.editor.toPlainText()
 
-        with open(targetfile, "wt") as fhd:
-            fhd.write(scriptbody)
+            # replace tabs with spaces
+            scriptbody = scriptbody.replace("\t", "    ")
 
-        print(f"Saved to {targetfile}")
+            with open(targetfile, "wt") as fhd:
+                fhd.write(scriptbody)
+
+            print(f"Saved to {targetfile}")
 
     def runscript(self):
         """ Execute script from editor """
@@ -414,13 +418,28 @@ class ScriptWriterDialog(QDialog):
         self.stdoutbox.setTextCursor(cursor)
         self.stdoutbox.ensureCursorVisible()
 
+    def rundanger(self):
+
+        scriptbody = self.editor.toPlainText()
+
+        print("Executing script!")
+        exec(scriptbody)
+
+
     def __del__(self):
         sys.stdout = sys.__stdout__
 
 
 if __name__ == "__main__":
+    import sys
+
+    sys.path.append("C:\\Users\\delna\\Apps\\easyAMPS\\src\\main\\python")
+    print("Running as main.... ")
     # to test the dialog box by via executing as python script
     app = QApplication(sys.argv)
+
+    print("Instantiating ScriptWriterDialog()")
     form = ScriptWriterDialog()
     form.show()
+    print("Event loop started.")
     sys.exit(app.exec_())

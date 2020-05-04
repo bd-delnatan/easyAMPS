@@ -23,9 +23,10 @@ from PyQt5.QtCore import (
     QVariant,
     pyqtSignal,
 )
-from PyQt5.QtGui import QKeySequence
+from PyQt5.QtGui import QKeySequence, QBrush
 from functools import partial
 from io import StringIO
+from FilterWidget import FilterDialog
 import pandas
 from numpy import nan
 
@@ -60,15 +61,11 @@ class DataFrameWidget(QTableView):
 
         # create (horizontal/top) header menu bindings
         self.horizontalHeader().setContextMenuPolicy(Qt.CustomContextMenu)
-        self.horizontalHeader().customContextMenuRequested.connect(
-            self._header_menu
-        )
+        self.horizontalHeader().customContextMenuRequested.connect(self._header_menu)
 
         # create (vertical/side/row) header menu bindings
         self.verticalHeader().setContextMenuPolicy(Qt.CustomContextMenu)
-        self.verticalHeader().customContextMenuRequested.connect(
-            self._index_menu
-        )
+        self.verticalHeader().customContextMenuRequested.connect(self._index_menu)
 
         # create custom QTableView menu bindings
         self.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -79,6 +76,7 @@ class DataFrameWidget(QTableView):
         self.clicked.connect(self._on_click)
 
     def keyPressEvent(self, event):
+        # intercept "Copy" and "Paste" key combinations or delete
         if event.matches(QKeySequence.Copy):
             self.copy()
         elif event.matches(QKeySequence.Paste):
@@ -97,16 +95,6 @@ class DataFrameWidget(QTableView):
     def _on_click(self, index):
         if index.isValid():
             self.cellClicked.emit(index.row(), index.column())
-
-    @property
-    def df(self):
-        """ returns the underlying data-frame for convenience
-
-        The underlying DataFrame can otherwise be accesssed via
-        self._data_model.df
-
-        """
-        return self._data_model.df
 
     def copy(self):
         """ copy selected cells into clipboard """
@@ -142,8 +130,7 @@ class DataFrameWidget(QTableView):
 
         if len(selindexes) != 1:
             alert(
-                title="Alert",
-                message="To paste into table, select a single cell",
+                title="Alert", message="To paste into table, select a single cell",
             )
         else:
             clipboard = QApplication.clipboard().text()
@@ -158,12 +145,8 @@ class DataFrameWidget(QTableView):
             # figure out if the current size of the table fits
             rowsize, colsize = self.df.shape
 
-            Ncol_extra = (
-                0 if col_id + Ncols <= colsize else col_id + Ncols - colsize
-            )
-            Nrow_extra = (
-                0 if row_id + Nrows <= rowsize else row_id + Nrows - rowsize
-            )
+            Ncol_extra = 0 if col_id + Ncols <= colsize else col_id + Ncols - colsize
+            Nrow_extra = 0 if row_id + Nrows <= rowsize else row_id + Nrows - rowsize
 
             if Ncol_extra > 0:
                 self._data_model.insertColumns(colsize, count=Ncol_extra)
@@ -193,6 +176,7 @@ class DataFrameWidget(QTableView):
         self._data_model.layoutChanged.emit()
 
     def _header_menu(self, pos):
+        """ context menu for header cells """
         menu = QMenu(self)
         column_index = self.horizontalHeader().logicalIndexAt(pos)
 
@@ -200,33 +184,23 @@ class DataFrameWidget(QTableView):
             # out of bounds
             return
 
-        menu.addAction(
-            r"Rename column", partial(self.renameHeader, column_index)
-        )
+        menu.addAction(r"Rename column", partial(self.renameHeader, column_index))
         menu.addSeparator()
 
         menu.addAction(r"Copy selected header", self.copyHeader)
         menu.addSeparator()
-
         menu.addAction(
             r"Sort (Descending)",
-            partial(
-                self._data_model.sort, column_index, order=Qt.DescendingOrder
-            ),
+            partial(self._data_model.sort, column_index, order=Qt.DescendingOrder),
         )
 
         menu.addAction(
             r"Sort (Ascending)",
-            partial(
-                self._data_model.sort, column_index, order=Qt.AscendingOrder
-            ),
+            partial(self._data_model.sort, column_index, order=Qt.AscendingOrder),
         )
-
         menu.addSeparator()
-
         menu.addAction(
-            r"Insert column <-",
-            partial(self._data_model.insertColumns, column_index),
+            r"Insert column <-", partial(self._data_model.insertColumns, column_index),
         )
 
         menu.addAction(
@@ -239,6 +213,7 @@ class DataFrameWidget(QTableView):
         menu.exec_(self.mapToGlobal(pos))
 
     def _index_menu(self, pos):
+        """ context menu for index/row cells """
         menu = QMenu(self)
         row_index = self.verticalHeader().logicalIndexAt(pos)
 
@@ -251,8 +226,7 @@ class DataFrameWidget(QTableView):
         )
 
         menu.addAction(
-            r"Insert row below",
-            partial(self._data_model.insertRows, row_index + 1),
+            r"Insert row below", partial(self._data_model.insertRows, row_index + 1),
         )
 
         menu.addAction(r"Delete selected row(s)", self.removeSelectedRows)
@@ -264,6 +238,12 @@ class DataFrameWidget(QTableView):
         menu.addAction(r"Copy selected", self.copy)
         menu.addAction(r"Paste", self.paste)
         menu.addAction(r"Clear contents", self.clear)
+        menu.addSeparator()
+        menu.addAction(r"Exclude selected row(s)", self.exclude_selected_rows)
+        menu.addSeparator()
+        menu.addAction(r"Remove exclusion", self.remove_exlusion)
+        menu.addSeparator()
+        menu.addAction(r"Set filter", self.prototype_set_filter)
         menu.exec_(self.mapToGlobal(pos))
 
     def copyHeader(self):
@@ -327,29 +307,78 @@ class DataFrameWidget(QTableView):
         else:
             alert("Warning", "Can't remove the only remaining column.")
 
+    def exclude_selected_rows(self):
+        selected_rows = list(
+            set(
+                [self._data_model.df.index[sel.row()] for sel in self.selectedIndexes()]
+            )
+        )
+
+        for row in selected_rows:
+            self._data_model.excluded_index.append(row)
+
+    def remove_exlusion(self):
+        selected_rows = list(
+            set(
+                [self._data_model.df.index[sel.row()] for sel in self.selectedIndexes()]
+            )
+        )
+
+        for row in selected_rows:
+            if row in self._data_model.excluded_index:
+                self._data_model.excluded_index.remove(row)
+
+    def prototype_set_filter(self):
+        column_names = self._data_model.df.columns
+        filter_dialog = FilterDialog(column_names, parent=self)
+        filter_dialog.show()
+        filter_dialog.exec_()
+
+    def getVisibleData(self):
+
+        data = self._data_model.df
+        excluded = self._data_model.excluded_index
+
+        return data.drop(excluded, axis=0)
+
 
 class DataFrameModel(QAbstractTableModel):
     def __init__(self):
         super(DataFrameModel, self).__init__()
         self._df = pandas.DataFrame()
         self.Ncoladded = 0
+        self.excluded_index = []
+        self.filters = []
+        # internal dataframe for filtered dataframe
+        self._filtered = pandas.DataFrame()
 
     def setDataFrame(self, dataframe):
-        # this uses the .setter method
-        self.df = dataframe
+        # dataframe initialization
+        self._df = dataframe
 
     @property
     def df(self):
-        return self._df
+        """ use this proper to access `visible` table """
+        if len(self.filters) == 0:
+            return self._df
+        else:
+            return self._filtered
 
     @df.setter
     def df(self, dataframe):
-        self.modelAboutToBeReset.emit()
-        self._df = dataframe
-        self.modelReset.emit()
+        if len(self.filters) == 0:
+            self.modelAboutToBeReset.emit()
+            self._df = dataframe
+            self.modelReset.emit()
+        else:
+            self.modelAboutToBeReset.emit()
+            self._filtered = dataframe
+            self.modelReset.emit()
 
     # table display functions
     def data(self, index, role):
+        """ this method determines how data is presented in the table """
+        data_id = self.df.index[index.row()]
 
         if role == Qt.DisplayRole:
             if not index.isValid():
@@ -374,6 +403,10 @@ class DataFrameModel(QAbstractTableModel):
 
             return f"{value}"
 
+        elif role == Qt.BackgroundRole and data_id in self.excluded_index:
+            # mark excluded data by coloring the background gray
+            return QBrush(Qt.gray)
+
         else:
 
             return None
@@ -393,6 +426,10 @@ class DataFrameModel(QAbstractTableModel):
 
     # end table display functions
 
+    def excludeRow(self, row_index):
+        if row_index not in self.excluded_row:
+            self.excluded_index.append(row_index)
+
     def rowCount(self, index):
         return self.df.shape[0]
 
@@ -409,13 +446,21 @@ class DataFrameModel(QAbstractTableModel):
     # for data entry into cell
     def setData(self, index, value, role=Qt.EditRole):
         if index.isValid():
+            # get indices from visible table
             row = index.row()
             column = index.column()
+
+            # map to actual internal dataframe index
+            glob_row = self.df.index[row]
+            glob_col = self.df.columns[column]
 
             if value == "":
                 return False
 
-            self._df.iloc[row, column] = value
+            # assign data to internal data frame
+            self._df.loc[glob_row, glob_col] = value
+            # assign data to visible data frame (self.filtered is a copy!)
+            self.df.loc[glob_row, glob_col] = value
 
             self.dataChanged.emit(index, index, (Qt.DisplayRole,))
 
@@ -436,6 +481,33 @@ class DataFrameModel(QAbstractTableModel):
         self.df = self.df.sort_values(
             self.df.columns[column_index], ascending=ascending
         )
+        self.layoutChanged.emit()
+
+    def addFilter(self, expression):
+        if expression not in self.filters:
+            self.filters.append(expression)
+
+    def filterData(self):
+        # combine expressions
+        if len(self.filters) > 1:
+            combinedexpr = " & ".join([filt for filt in self.filters])
+        elif len(self.filters) == 1:
+            combinedexpr = self.filters[0]
+        elif len(self.filters) == 0:
+            # dont do any queries
+            self.layoutAboutToBeChanged.emit()
+            self.df = self._df
+            self.layoutChanged.emit()
+            return None
+        self.layoutAboutToBeChanged.emit()
+        # do filtering only on internal original dataframe
+        self.df = self._df.query(combinedexpr)
+        self.layoutChanged.emit()
+
+    def resetFilter(self):
+        self.layoutAboutToBeChanged.emit()
+        self.filters = []
+        self._filtered = pandas.DataFrame()
         self.layoutChanged.emit()
 
     def insertRows(self, position, count=1, index=QModelIndex()):

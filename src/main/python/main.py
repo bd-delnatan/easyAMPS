@@ -251,7 +251,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def fit_phase_difference(self):
 
-        data = self.tableWidget._data_model.df
+        data = self.tableWidget.getVisibleData()
 
         if self.currentfilepath is not None:
             exptname = self.currentfilepath.stem
