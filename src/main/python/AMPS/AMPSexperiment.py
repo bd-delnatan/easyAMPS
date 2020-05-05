@@ -252,8 +252,11 @@ class AMPSexperiment:
 
 
 def return_signs(vec, inflection):
-    vecsign = [-1 if v > inflection else -1 for v in vec]
-    return array(vecsign)
+    if inflection is not None:
+        vecsign = [-1 if v > inflection else -1 for v in vec]
+        return array(vecsign)
+    else:
+        return -1.0
 
 
 def explore_background(phases_min, phases_max, bg_min, bg_max, signal_obs):

@@ -3,7 +3,12 @@ from PyQt5.QtWidgets import (
     QFileDialog,
     QAction,
     QToolBar,
+    QDialog,
+    QPlainTextEdit,
+    QPushButton,
+    QVBoxLayout
 )
+from PyQt5.QtGui import QFontDatabase
 from fbs_runtime.application_context.PyQt5 import ApplicationContext
 from pathlib import Path
 import sys
@@ -72,6 +77,45 @@ class AppContext(ApplicationContext):
         window.show()
         return self.app.exec_()
 
+# custom scripting interface for debugging
+class ScriptWindow(QDialog):
+    def __init__(self, parent=None):
+        super(ScriptWindow, self).__init__(parent)
+
+        self.setGeometry(100, 100, 800, 600)
+        self.parent = parent
+        font = QFontDatabase.systemFont(QFontDatabase.FixedFont)
+        font.setFixedPitch(True)
+        font.setPointSize(8)
+
+        self.editor = QPlainTextEdit()
+        self.editor.setFont(font)
+        self.editor.setTabStopWidth(self.editor.fontMetrics().width(" ") * 4)
+
+        self.runScriptButton = QPushButton("Run script")
+
+        self.layout = QVBoxLayout()
+        self.layout.addWidget(self.editor)
+        self.layout.addWidget(self.runScriptButton)
+
+        self.setLayout(self.layout)
+        self.setWindowTitle("Script editor")
+
+        self.setup_button_behavior()
+
+        self.show()
+
+    def setup_button_behavior(self):
+        self.runScriptButton.clicked.connect(self.runscript)
+
+    def runscript(self):
+        print("Script is executed.")
+        print("Testing parent data accessibility")
+
+        text2execute = self.editor.toPlainText()
+
+        exec(text2execute)
+
 
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, *args, obj=None, **kwargs):
@@ -100,6 +144,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         plot_fits_button.setStatusTip("Fit phase difference to 4-channel data")
         plot_fits_button.triggered.connect(self.fit_phase_difference)
         toolbar.addAction(plot_fits_button)
+
+        toolbar.addSeparator()
+        debug_button = QAction("Open debugger", self)
+        debug_button.triggered.connect(self.opendebugger)
+        toolbar.addAction(debug_button)
 
         # add some empty dataframe to the angle calculator table
         calcanglesdf = pd.DataFrame(
@@ -138,6 +187,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.computeAnglesButton.clicked.connect(self.compute_angles)
         self.checkSolutionsButton.clicked.connect(self.check_solutions)
         self.correctSHGButton.clicked.connect(self.correct_SHG)
+
+    def opendebugger(self):
+        dlg = ScriptWindow(parent=self)
+        dlg.exec_()
 
     def openfile(self):
         """ File > Open dialog box """
@@ -370,6 +423,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         sol = df.apply(compute_angles, axis=1)
         df[["angle", "distribution"]] = sol
 
+        df.loc[df["label"] == "", "label"] = np.nan
+
         # reassign results back to widget
         self.calculatorTableWidget._data_model.df = df
         self.calculatorTableWidget.resizeColumnsToContents()
@@ -378,19 +433,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         unique_labels = df["label"].unique().tolist()
 
-        for label in unique_labels:
-
-            if label == "":
-                label = "N/A"
-                wrk = df
-            else:
+        if len(unique_labels) > 1:
+            for label in unique_labels:
                 wrk = df[df["label"] == label]
-
+                self.anglecalc_mplwidget.canvas.axes.plot(
+                    wrk["distribution"].values,
+                    wrk["angle"].values,
+                    "o",
+                    label=label,
+                )
+        else:
             self.anglecalc_mplwidget.canvas.axes.plot(
-                wrk["distribution"].values,
-                wrk["angle"].values,
+                df["distribution"].values,
+                df["angle"].values,
                 "o",
-                label=label,
+                label="N/A",
             )
 
         self.anglecalc_mplwidget.canvas.axes.legend(
