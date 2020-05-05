@@ -7,13 +7,13 @@ import pickle
 from . import __path__
 from pathlib import Path
 
-__AMPS_PATH__ = __path__[0]
+__AMPS_PATH__ = Path(__file__).parent
 
-with open(Path(__AMPS_PATH__) / "SHGlookuptable.pickle", "rb") as fhd:
+with open(__AMPS_PATH__ / "SHGlookuptable.pickle", "rb") as fhd:
     _shglut = pickle.load(fhd)
 
-with open(Path(__AMPS_PATH__) / "TPFlookuptable.pickle", "rb") as fhd:
+with open(__AMPS_PATH__ / "TPFlookuptable.pickle", "rb") as fhd:
     _tpflut = pickle.load(fhd)
 
 
-_AMPSboundaries = read_csv(Path(__AMPS_PATH__) / "solution_boundaries.csv")
+_AMPSboundaries = read_csv(__AMPS_PATH__ / "solution_boundaries.csv")
