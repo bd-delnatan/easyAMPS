@@ -1,7 +1,6 @@
 from PyQt5.QtWidgets import (
     QApplication,
     QListWidget,
-    QListWidgetItem,
     QDialog,
     QDesktopWidget,
     QHBoxLayout,
@@ -9,8 +8,8 @@ from PyQt5.QtWidgets import (
     QComboBox,
     QLineEdit,
     QPushButton,
+    QCheckBox
 )
-from PyQt5.QtCore import QAbstractListModel, Qt
 
 
 class FilterDialog(QDialog):
@@ -37,10 +36,11 @@ class FilterDialog(QDialog):
         self.condition.addItem(">")
         self.condition.addItem("!=")
         self.value = QLineEdit()
+        self.force_string = QCheckBox("as string")
         self.filter_layout.addWidget(self.column_names)
         self.filter_layout.addWidget(self.condition)
         self.filter_layout.addWidget(self.value)
-
+        self.filter_layout.addWidget(self.force_string)
         self.button_layout = QHBoxLayout()
         self.add_button = QPushButton("Add")
         self.remove_button = QPushButton("Remove")
@@ -98,6 +98,7 @@ class FilterDialog(QDialog):
         column_name = self.column_names.currentText()
         condition = self.condition.currentText()
         value = self.value.text()
+        as_string = self.force_string.isChecked()
 
         def isfloat(s):
             try:
@@ -115,8 +116,9 @@ class FilterDialog(QDialog):
             except:
                 return False
 
-        # compose filter entry
-        if isfloat(value):
+        if as_string:
+            expr = f"`{column_name:s}` {condition:s} '{value}'"
+        elif isfloat(value):
             expr = f"`{column_name:s}` {condition:s} {float(value):.4f}"
         elif isint(value):
             expr = f"`{column_name:s}` {condition:s} {int(value):d}"

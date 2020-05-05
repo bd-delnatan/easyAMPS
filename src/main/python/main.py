@@ -26,11 +26,7 @@ os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
 
 # Ui_MainWindow, QtBaseClass = uic.loadUiType(str(root / "easyAMPS_maingui.ui"))
 mpl.rc(
-    "font",
-    **{
-        "size": 10,
-        "family": "sans-serif",
-    },
+    "font", **{"size": 10, "family": "sans-serif",},
 )
 mpl.pyplot.style.use("bmh")
 
@@ -105,11 +101,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         plot_fits_button.triggered.connect(self.fit_phase_difference)
         toolbar.addAction(plot_fits_button)
 
-
-        peek_data_button = QAction("Peek at data", self)
-        peek_data_button.triggered.connect(self.peek_at_table)
-        toolbar.addAction(peek_data_button)
-
         # add some empty dataframe to the angle calculator table
         calcanglesdf = pd.DataFrame(
             {
@@ -117,7 +108,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 "SHGratio": [""],
                 "angle": [""],
                 "distribution": [""],
-                "label": [""]
+                "label": [""],
             }
         )
         self.calculatorTableWidget.setDataFrame(calcanglesdf)
@@ -148,12 +139,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.checkSolutionsButton.clicked.connect(self.check_solutions)
         self.correctSHGButton.clicked.connect(self.correct_SHG)
 
-    def peek_at_table(self):
-        df = self.tableWidget._data_model.df.apply(
-            pd.to_numeric, errors="ignore"
-        )
-        print(df)
-
     def openfile(self):
         """ File > Open dialog box """
 
@@ -166,6 +151,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if fileName:
             self.currentfilepath = Path(fileName)
             self.rawdataframe = pd.read_csv(fileName)
+            columns = self.rawdataframe.columns
+            replacements = {
+                c: c.replace("#", "Num") for c in columns if "#" in c
+            }
+            self.rawdataframe.rename(columns=replacements, inplace=True)
+
             self.tableWidget.setDataFrame(self.rawdataframe)
             newWindowTitle = f"{self.maintitle} : {fileName}"
             self.setWindowTitle(newWindowTitle)
@@ -205,7 +196,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def visualize_4ch(self):
         # self.visualchecksWidget
         # get raw data
-        data = self.tableWidget._data_model.df
+        data = self.tableWidget.getVisibleData()
 
         if data.empty:
             alert("Warning!", "No data is loaded")
@@ -373,7 +364,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def compute_angles(self):
         # get data from table
-        df = self.calculatorTableWidget.df.copy()
+        df = self.calculatorTableWidget._data_model.df.copy()
         df["SHGratio"] = df["SHGratio"].astype(float)
         df["TPFratio"] = df["TPFratio"].astype(float)
         sol = df.apply(compute_angles, axis=1)
@@ -388,12 +379,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         unique_labels = df["label"].unique().tolist()
 
         for label in unique_labels:
-            wrk = df[df["label"] == label]
+
+            if label == "":
+                label = "N/A"
+                wrk = df
+            else:
+                wrk = df[df["label"] == label]
+
             self.anglecalc_mplwidget.canvas.axes.plot(
-                wrk["distribution"].values, wrk["angle"].values, "o", label=label
+                wrk["distribution"].values,
+                wrk["angle"].values,
+                "o",
+                label=label,
             )
 
-        self.anglecalc_mplwidget.canvas.axes.legend(bbox_to_anchor=(1.10, 0.95), fontsize=8.5)
+        self.anglecalc_mplwidget.canvas.axes.legend(
+            bbox_to_anchor=(1.10, 0.95), fontsize=8.5
+        )
 
         self.anglecalc_mplwidget.canvas.axes.set_xlabel("distribution")
         self.anglecalc_mplwidget.canvas.axes.set_ylabel("angle")

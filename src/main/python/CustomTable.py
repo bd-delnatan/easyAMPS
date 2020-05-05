@@ -57,7 +57,7 @@ class DataFrameWidget(QTableView):
         if df is None:
             df = pandas.DataFrame()
 
-        self._data_model.setDataFrame(df)
+        self.setDataFrame(df)
 
         # create (horizontal/top) header menu bindings
         self.horizontalHeader().setContextMenuPolicy(Qt.CustomContextMenu)
@@ -89,6 +89,8 @@ class DataFrameWidget(QTableView):
             super(DataFrameWidget, self).keyPressEvent(event)
 
     def setDataFrame(self, dataframe):
+        self._data_model.resetFilter()
+        self._data_model.resetExcluded()
         self._data_model.setDataFrame(dataframe)
         self.resizeColumnsToContents()
 
@@ -143,7 +145,7 @@ class DataFrameWidget(QTableView):
             # current position
             row_id, col_id = selindexes[0].row(), selindexes[0].column()
             # figure out if the current size of the table fits
-            rowsize, colsize = self.df.shape
+            rowsize, colsize = self._data_model.df.shape
 
             Ncol_extra = 0 if col_id + Ncols <= colsize else col_id + Ncols - colsize
             Nrow_extra = 0 if row_id + Nrows <= rowsize else row_id + Nrows - rowsize
@@ -259,7 +261,7 @@ class DataFrameWidget(QTableView):
         headernames = []
 
         for col in selcolumns:
-            headernames.append(self.df.columns[col])
+            headernames.append(self._data_model.df.columns[col])
 
         str2copy = "\t".join(headernames)
         QApplication.clipboard().setText(str2copy)
@@ -274,9 +276,9 @@ class DataFrameWidget(QTableView):
 
         # name can't be empty
         if newname != "":
-            newcolumns = self.df.columns.tolist()
+            newcolumns = self._data_model.df.columns.tolist()
             newcolumns[column_index] = newname
-            self.df.columns = newcolumns
+            self._data_model.df.columns = newcolumns
 
     def removeSelectedRows(self):
         # get the number of rows
@@ -354,7 +356,9 @@ class DataFrameModel(QAbstractTableModel):
 
     def setDataFrame(self, dataframe):
         # dataframe initialization
+        self.modelAboutToBeReset.emit()
         self._df = dataframe
+        self.modelReset.emit()
 
     @property
     def df(self):
@@ -509,6 +513,9 @@ class DataFrameModel(QAbstractTableModel):
         self.filters = []
         self._filtered = pandas.DataFrame()
         self.layoutChanged.emit()
+
+    def resetExcluded(self):
+        self.excluded_index = []
 
     def insertRows(self, position, count=1, index=QModelIndex()):
 

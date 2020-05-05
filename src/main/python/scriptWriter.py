@@ -235,7 +235,7 @@ class ScriptWriterDialog(QDialog):
 
         font = QFontDatabase.systemFont(QFontDatabase.FixedFont)
         font.setFixedPitch(True)
-        font.setPointSize(10)
+        font.setPointSize(11)
 
         self.editor = QPlainTextEdit()
         self.editor.setFont(font)
@@ -255,14 +255,12 @@ class ScriptWriterDialog(QDialog):
         self.checkSpacesButton = QPushButton("Convert tabs")
         self.saveScriptButton = QPushButton("Save script")
         self.runScriptButton = QPushButton("Run Script")
-        self.dangerButton = QPushButton("Danger!")
 
         self.buttonsLayout = QHBoxLayout()
         self.buttonsLayout.addWidget(self.loadScriptButton)
         self.buttonsLayout.addWidget(self.checkSpacesButton)
         self.buttonsLayout.addWidget(self.saveScriptButton)
         self.buttonsLayout.addWidget(self.runScriptButton)
-        self.buttonsLayout.addWidget(self.dangerButton)
 
         self.layout = QVBoxLayout()
 
@@ -284,7 +282,6 @@ class ScriptWriterDialog(QDialog):
         self.checkSpacesButton.clicked.connect(self.converttabs)
         self.saveScriptButton.clicked.connect(self.savescript)
         self.runScriptButton.clicked.connect(self.runscript)
-        self.dangerButton.clicked.connect(self.rundanger)
 
     def loadscript(self):
         options = QFileDialog.Options()
@@ -417,14 +414,6 @@ class ScriptWriterDialog(QDialog):
         cursor.insertText(text)
         self.stdoutbox.setTextCursor(cursor)
         self.stdoutbox.ensureCursorVisible()
-
-    def rundanger(self):
-
-        scriptbody = self.editor.toPlainText()
-
-        print("Executing script!")
-        exec(scriptbody)
-
 
     def __del__(self):
         sys.stdout = sys.__stdout__
