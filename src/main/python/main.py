@@ -27,7 +27,7 @@ from AMPS import _AMPSboundaries
 from easyAMPS_maingui import Ui_MainWindow
 
 
-__VERSION__ = 0.1.2
+__VERSION__ = "0.1.2"
 
 
 # needed to properly scale high DPI screens in Windows OS
@@ -125,7 +125,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, *args, obj=None, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setupUi(self)
-        self.maintitle = f"easyAMPS {__VERSION__} (Biodesy, Inc.)"
+        self.maintitle = f"easyAMPS v{__VERSION__} (Biodesy, Inc.)"
         self.currentfilepath = None
 
         # To make Mac/Windows more coherent disable Native Mac menubar
