@@ -61,11 +61,15 @@ class DataFrameWidget(QTableView):
 
         # create (horizontal/top) header menu bindings
         self.horizontalHeader().setContextMenuPolicy(Qt.CustomContextMenu)
-        self.horizontalHeader().customContextMenuRequested.connect(self._header_menu)
+        self.horizontalHeader().customContextMenuRequested.connect(
+            self._header_menu
+        )
 
         # create (vertical/side/row) header menu bindings
         self.verticalHeader().setContextMenuPolicy(Qt.CustomContextMenu)
-        self.verticalHeader().customContextMenuRequested.connect(self._index_menu)
+        self.verticalHeader().customContextMenuRequested.connect(
+            self._index_menu
+        )
 
         # create custom QTableView menu bindings
         self.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -132,7 +136,8 @@ class DataFrameWidget(QTableView):
 
         if len(selindexes) != 1:
             alert(
-                title="Alert", message="To paste into table, select a single cell",
+                title="Alert",
+                message="To paste into table, select a single cell",
             )
         else:
             clipboard = QApplication.clipboard().text()
@@ -147,8 +152,12 @@ class DataFrameWidget(QTableView):
             # figure out if the current size of the table fits
             rowsize, colsize = self._data_model.df.shape
 
-            Ncol_extra = 0 if col_id + Ncols <= colsize else col_id + Ncols - colsize
-            Nrow_extra = 0 if row_id + Nrows <= rowsize else row_id + Nrows - rowsize
+            Ncol_extra = (
+                0 if col_id + Ncols <= colsize else col_id + Ncols - colsize
+            )
+            Nrow_extra = (
+                0 if row_id + Nrows <= rowsize else row_id + Nrows - rowsize
+            )
 
             if Ncol_extra > 0:
                 self._data_model.insertColumns(colsize, count=Ncol_extra)
@@ -186,23 +195,30 @@ class DataFrameWidget(QTableView):
             # out of bounds
             return
 
-        menu.addAction(r"Rename column", partial(self.renameHeader, column_index))
+        menu.addAction(
+            r"Rename column", partial(self.renameHeader, column_index)
+        )
         menu.addSeparator()
 
         menu.addAction(r"Copy selected header", self.copyHeader)
         menu.addSeparator()
         menu.addAction(
             r"Sort (Descending)",
-            partial(self._data_model.sort, column_index, order=Qt.DescendingOrder),
+            partial(
+                self._data_model.sort, column_index, order=Qt.DescendingOrder
+            ),
         )
 
         menu.addAction(
             r"Sort (Ascending)",
-            partial(self._data_model.sort, column_index, order=Qt.AscendingOrder),
+            partial(
+                self._data_model.sort, column_index, order=Qt.AscendingOrder
+            ),
         )
         menu.addSeparator()
         menu.addAction(
-            r"Insert column <-", partial(self._data_model.insertColumns, column_index),
+            r"Insert column <-",
+            partial(self._data_model.insertColumns, column_index),
         )
 
         menu.addAction(
@@ -228,7 +244,8 @@ class DataFrameWidget(QTableView):
         )
 
         menu.addAction(
-            r"Insert row below", partial(self._data_model.insertRows, row_index + 1),
+            r"Insert row below",
+            partial(self._data_model.insertRows, row_index + 1),
         )
 
         menu.addAction(r"Delete selected row(s)", self.removeSelectedRows)
@@ -251,7 +268,9 @@ class DataFrameWidget(QTableView):
     def copyHeader(self):
 
         selindexes = self.selectedIndexes()
-        selcolumns = list(set([sel.column() for sel in self.selectedIndexes()]))
+        selcolumns = sorted(
+            list(set([sel.column() for sel in self.selectedIndexes()]))
+        )
 
         if len(selindexes) < 1:
             # nothing is selected
@@ -312,7 +331,10 @@ class DataFrameWidget(QTableView):
     def exclude_selected_rows(self):
         selected_rows = list(
             set(
-                [self._data_model.df.index[sel.row()] for sel in self.selectedIndexes()]
+                [
+                    self._data_model.df.index[sel.row()]
+                    for sel in self.selectedIndexes()
+                ]
             )
         )
 
@@ -322,7 +344,10 @@ class DataFrameWidget(QTableView):
     def remove_exlusion(self):
         selected_rows = list(
             set(
-                [self._data_model.df.index[sel.row()] for sel in self.selectedIndexes()]
+                [
+                    self._data_model.df.index[sel.row()]
+                    for sel in self.selectedIndexes()
+                ]
             )
         )
 
