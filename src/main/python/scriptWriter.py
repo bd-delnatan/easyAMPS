@@ -53,7 +53,7 @@ patterns:
     ]
 
 
-# Map configuration for each experiment listed above. except blank
+# Map configuration for each experiment listed above.
 # blocks with multiple origins will be combined into one file
 experiment_01:
     "protein_R52C_apo":
@@ -394,7 +394,6 @@ class ScriptWriterDialog(QDialog):
 
                     print(f"Found {len(timepoints)} read # :")
                     print(timepoints)
-                    print("Using the last one : ", lastread)
 
                     data = alldata
 
