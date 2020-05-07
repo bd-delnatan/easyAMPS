@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import (
     QDialog,
     QPlainTextEdit,
     QPushButton,
-    QVBoxLayout
+    QVBoxLayout,
 )
 from PyQt5.QtGui import QFontDatabase
 from fbs_runtime.application_context.PyQt5 import ApplicationContext
@@ -18,6 +18,7 @@ import numpy as np
 import matplotlib as mpl
 from AMPS.solvers import compute_angles
 from AMPS import AMPSexperiment, return_signs
+from AMPS.functions import nP_SHG, nS_SHG, nP_TPF, nS_TPF
 from AMPS.viz import visualize_AMPS_solution, overview
 from PyBiodesy.DataStructures import correct_SHG
 from solutionsWidget import SolutionsCheckWidget
@@ -27,7 +28,7 @@ from AMPS import _AMPSboundaries
 from easyAMPS_maingui import Ui_MainWindow
 
 
-__VERSION__ = "0.1.2"
+__VERSION__ = "0.1.2b"
 
 
 # needed to properly scale high DPI screens in Windows OS
@@ -35,7 +36,7 @@ os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
 
 # Ui_MainWindow, QtBaseClass = uic.loadUiType(str(root / "easyAMPS_maingui.ui"))
 mpl.rc(
-    "font", **{"size": 10, "family": "sans-serif",},
+    "font", **{"size": 10, "family": "sans-serif"},
 )
 mpl.pyplot.style.use("bmh")
 
@@ -75,11 +76,24 @@ def checkcolumns(columns):
     return valid, missing
 
 
+def autolabel(rects, ax):
+    """Attach a text label above each bar in *rects*, displaying its height."""
+    for rect in rects:
+        height = rect.get_height()
+        voffset = 3 if height > 0 else -15
+        ax.annotate("{:.1f}%".format(height),
+                    xy=(rect.get_x() + rect.get_width() / 2, height),
+                    xytext=(0, voffset),  # 3 points vertical offset
+                    textcoords="offset points",
+                    ha='center', va='bottom')
+
+
 class AppContext(ApplicationContext):
     def run(self):
         window = MainWindow()
         window.show()
         return self.app.exec_()
+
 
 # custom scripting interface for debugging
 class ScriptWindow(QDialog):
@@ -191,6 +205,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.computeAnglesButton.clicked.connect(self.compute_angles)
         self.checkSolutionsButton.clicked.connect(self.check_solutions)
         self.correctSHGButton.clicked.connect(self.correct_SHG)
+        self.predictSignalButton.clicked.connect(self.predict_signals)
 
     def opendebugger(self):
         dlg = ScriptWindow(parent=self)
@@ -448,10 +463,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 )
         else:
             self.anglecalc_mplwidget.canvas.axes.plot(
-                df["distribution"].values,
-                df["angle"].values,
-                "o",
-                label="N/A",
+                df["distribution"].values, df["angle"].values, "o", label="N/A",
             )
 
         self.anglecalc_mplwidget.canvas.axes.legend(
@@ -514,6 +526,50 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         dlg1.draw()
         # execute dialog box
         dlg1.exec_()
+
+    def predict_signals(self):
+
+        def _compute_signals(μ, σ):
+            μ_rad, σ_rad = np.deg2rad(μ), np.deg2rad(σ)
+            return np.array([
+                nP_SHG(μ_rad, σ_rad),
+                nS_SHG(μ_rad, σ_rad),
+                nP_TPF(μ_rad, σ_rad),
+                nS_TPF(μ_rad, σ_rad)
+            ])
+
+        ref_angle = self.referenceTiltSpinBox.value()
+        ref_dist = self.referenceDistributionSpinBox.value()
+        arg_angle = self.targetTiltSpinBox.value()
+        arg_dist = self.targetDistributionSpinBox.value()
+
+        if (ref_angle, ref_dist) == (arg_angle, arg_dist):
+            alert("Warning", "Reference and final values are the same")
+        else:
+            ref_intensities = _compute_signals(ref_angle, ref_dist)
+            arg_intensities = _compute_signals(arg_angle, arg_dist)
+
+            # compute relative signal changes as a percentage
+            signal_changes = 100.0 * ((arg_intensities - ref_intensities) / ref_intensities)
+
+            bar_labels = ["P-SHG", "S-SHG", "P-FL", "S-FL"]
+            xpos = np.arange(1, 5)
+
+            # clear the axis
+            self.predictedSignalWidget.canvas.axes.clear()
+
+            # do the actual plotting
+            bars1 = self.predictedSignalWidget.canvas.axes.bar(xpos, signal_changes)
+
+            autolabel(bars1, self.predictedSignalWidget.canvas.axes)
+
+            self.predictedSignalWidget.canvas.axes.grid(b=False, axis='x')
+
+            self.predictedSignalWidget.canvas.axes.set_xticks(xpos)
+            self.predictedSignalWidget.canvas.axes.set_xticklabels(bar_labels)
+            self.predictedSignalWidget.canvas.axes.set_xlabel("Channels")
+            self.predictedSignalWidget.canvas.axes.set_ylabel(r"% signal change")
+            self.predictedSignalWidget.canvas.refresh()
 
 
 if __name__ == "__main__":
