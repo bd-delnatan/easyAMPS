@@ -543,7 +543,7 @@ point</string>
             <widget class="QLabel" name="label_7">
              <property name="geometry">
               <rect>
-               <x>10</x>
+               <x>20</x>
                <y>30</y>
                <width>131</width>
                <height>21</height>
@@ -551,7 +551,8 @@ point</string>
              </property>
              <property name="font">
               <font>
-               <pointsize>13</pointsize>
+               <family>MS Shell Dlg 2</family>
+               <pointsize>11</pointsize>
               </font>
              </property>
              <property name="text">
@@ -566,13 +567,14 @@ point</string>
               <rect>
                <x>10</x>
                <y>70</y>
-               <width>131</width>
+               <width>141</width>
                <height>21</height>
               </rect>
              </property>
              <property name="font">
               <font>
-               <pointsize>13</pointsize>
+               <family>MS Shell Dlg 2</family>
+               <pointsize>11</pointsize>
               </font>
              </property>
              <property name="text">
@@ -585,11 +587,17 @@ point</string>
             <widget class="QDoubleSpinBox" name="referenceDistributionSpinBox">
              <property name="geometry">
               <rect>
-               <x>150</x>
+               <x>160</x>
                <y>70</y>
                <width>68</width>
                <height>24</height>
               </rect>
+             </property>
+             <property name="font">
+              <font>
+               <family>MS Shell Dlg 2</family>
+               <pointsize>13</pointsize>
+              </font>
              </property>
              <property name="minimum">
               <double>2.000000000000000</double>
@@ -604,11 +612,17 @@ point</string>
             <widget class="QDoubleSpinBox" name="referenceTiltSpinBox">
              <property name="geometry">
               <rect>
-               <x>150</x>
+               <x>160</x>
                <y>30</y>
                <width>68</width>
                <height>24</height>
               </rect>
+             </property>
+             <property name="font">
+              <font>
+               <family>MS Shell Dlg 2</family>
+               <pointsize>13</pointsize>
+              </font>
              </property>
              <property name="minimum">
               <double>0.000000000000000</double>
@@ -651,7 +665,7 @@ point</string>
             <widget class="QLabel" name="label_9">
              <property name="geometry">
               <rect>
-               <x>10</x>
+               <x>20</x>
                <y>30</y>
                <width>131</width>
                <height>21</height>
@@ -659,7 +673,8 @@ point</string>
              </property>
              <property name="font">
               <font>
-               <pointsize>13</pointsize>
+               <family>MS Shell Dlg 2</family>
+               <pointsize>11</pointsize>
               </font>
              </property>
              <property name="text">
@@ -674,13 +689,14 @@ point</string>
               <rect>
                <x>10</x>
                <y>70</y>
-               <width>131</width>
+               <width>141</width>
                <height>21</height>
               </rect>
              </property>
              <property name="font">
               <font>
-               <pointsize>13</pointsize>
+               <family>MS Shell Dlg 2</family>
+               <pointsize>11</pointsize>
               </font>
              </property>
              <property name="text">
@@ -693,11 +709,17 @@ point</string>
             <widget class="QDoubleSpinBox" name="targetDistributionSpinBox">
              <property name="geometry">
               <rect>
-               <x>150</x>
+               <x>160</x>
                <y>70</y>
                <width>68</width>
                <height>24</height>
               </rect>
+             </property>
+             <property name="font">
+              <font>
+               <family>MS Shell Dlg 2</family>
+               <pointsize>13</pointsize>
+              </font>
              </property>
              <property name="minimum">
               <double>2.000000000000000</double>
@@ -712,11 +734,17 @@ point</string>
             <widget class="QDoubleSpinBox" name="targetTiltSpinBox">
              <property name="geometry">
               <rect>
-               <x>150</x>
+               <x>160</x>
                <y>30</y>
                <width>68</width>
                <height>24</height>
               </rect>
+             </property>
+             <property name="font">
+              <font>
+               <family>MS Shell Dlg 2</family>
+               <pointsize>13</pointsize>
+              </font>
              </property>
              <property name="minimum">
               <double>0.000000000000000</double>
@@ -763,6 +791,12 @@ point</string>
           </item>
           <item>
            <spacer name="verticalSpacer">
+            <property name="font">
+             <font>
+              <family>Arial</family>
+              <pointsize>11</pointsize>
+             </font>
+            </property>
             <property name="orientation">
              <enum>Qt::Vertical</enum>
             </property>
