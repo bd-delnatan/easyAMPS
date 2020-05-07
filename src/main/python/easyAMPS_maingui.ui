@@ -549,12 +549,6 @@ point</string>
                <height>21</height>
               </rect>
              </property>
-             <property name="font">
-              <font>
-               <family>MS Shell Dlg 2</family>
-               <pointsize>11</pointsize>
-              </font>
-             </property>
              <property name="text">
               <string>Probe angle, ˚</string>
              </property>
@@ -570,12 +564,6 @@ point</string>
                <width>141</width>
                <height>21</height>
               </rect>
-             </property>
-             <property name="font">
-              <font>
-               <family>MS Shell Dlg 2</family>
-               <pointsize>11</pointsize>
-              </font>
              </property>
              <property name="text">
               <string>Probe distribution, ˚</string>
@@ -595,8 +583,7 @@ point</string>
              </property>
              <property name="font">
               <font>
-               <family>MS Shell Dlg 2</family>
-               <pointsize>13</pointsize>
+               <pointsize>12</pointsize>
               </font>
              </property>
              <property name="minimum">
@@ -620,8 +607,7 @@ point</string>
              </property>
              <property name="font">
               <font>
-               <family>MS Shell Dlg 2</family>
-               <pointsize>13</pointsize>
+               <pointsize>12</pointsize>
               </font>
              </property>
              <property name="minimum">
@@ -671,12 +657,6 @@ point</string>
                <height>21</height>
               </rect>
              </property>
-             <property name="font">
-              <font>
-               <family>MS Shell Dlg 2</family>
-               <pointsize>11</pointsize>
-              </font>
-             </property>
              <property name="text">
               <string>Probe angle, ˚</string>
              </property>
@@ -692,12 +672,6 @@ point</string>
                <width>141</width>
                <height>21</height>
               </rect>
-             </property>
-             <property name="font">
-              <font>
-               <family>MS Shell Dlg 2</family>
-               <pointsize>11</pointsize>
-              </font>
              </property>
              <property name="text">
               <string>Probe distribution, ˚</string>
@@ -717,8 +691,7 @@ point</string>
              </property>
              <property name="font">
               <font>
-               <family>MS Shell Dlg 2</family>
-               <pointsize>13</pointsize>
+               <pointsize>12</pointsize>
               </font>
              </property>
              <property name="minimum">
@@ -742,8 +715,7 @@ point</string>
              </property>
              <property name="font">
               <font>
-               <family>MS Shell Dlg 2</family>
-               <pointsize>13</pointsize>
+               <pointsize>12</pointsize>
               </font>
              </property>
              <property name="minimum">
@@ -771,6 +743,11 @@ point</string>
               <width>120</width>
               <height>16777215</height>
              </size>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>16</pointsize>
+             </font>
             </property>
             <property name="layoutDirection">
              <enum>Qt::LeftToRight</enum>

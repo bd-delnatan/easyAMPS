@@ -2,11 +2,13 @@
 
 # Form implementation generated from reading ui file 'easyAMPS_maingui.ui'
 #
-# Created by: PyQt5 UI code generator 5.9.2
+# Created by: PyQt5 UI code generator 5.14.2
 #
 # WARNING! All changes made in this file will be lost!
 
+
 from PyQt5 import QtCore, QtGui, QtWidgets
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -237,25 +239,16 @@ class Ui_MainWindow(object):
         self.groupBox_4.setObjectName("groupBox_4")
         self.label_7 = QtWidgets.QLabel(self.groupBox_4)
         self.label_7.setGeometry(QtCore.QRect(20, 30, 131, 21))
-        font = QtGui.QFont()
-        font.setFamily("MS Shell Dlg 2")
-        font.setPointSize(11)
-        self.label_7.setFont(font)
         self.label_7.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.label_7.setObjectName("label_7")
         self.label_8 = QtWidgets.QLabel(self.groupBox_4)
         self.label_8.setGeometry(QtCore.QRect(10, 70, 141, 21))
-        font = QtGui.QFont()
-        font.setFamily("MS Shell Dlg 2")
-        font.setPointSize(11)
-        self.label_8.setFont(font)
         self.label_8.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.label_8.setObjectName("label_8")
         self.referenceDistributionSpinBox = QtWidgets.QDoubleSpinBox(self.groupBox_4)
         self.referenceDistributionSpinBox.setGeometry(QtCore.QRect(160, 70, 68, 24))
         font = QtGui.QFont()
-        font.setFamily("MS Shell Dlg 2")
-        font.setPointSize(13)
+        font.setPointSize(12)
         self.referenceDistributionSpinBox.setFont(font)
         self.referenceDistributionSpinBox.setMinimum(2.0)
         self.referenceDistributionSpinBox.setMaximum(70.0)
@@ -264,8 +257,7 @@ class Ui_MainWindow(object):
         self.referenceTiltSpinBox = QtWidgets.QDoubleSpinBox(self.groupBox_4)
         self.referenceTiltSpinBox.setGeometry(QtCore.QRect(160, 30, 68, 24))
         font = QtGui.QFont()
-        font.setFamily("MS Shell Dlg 2")
-        font.setPointSize(13)
+        font.setPointSize(12)
         self.referenceTiltSpinBox.setFont(font)
         self.referenceTiltSpinBox.setMinimum(0.0)
         self.referenceTiltSpinBox.setMaximum(90.0)
@@ -289,25 +281,16 @@ class Ui_MainWindow(object):
         self.groupBox_5.setObjectName("groupBox_5")
         self.label_9 = QtWidgets.QLabel(self.groupBox_5)
         self.label_9.setGeometry(QtCore.QRect(20, 30, 131, 21))
-        font = QtGui.QFont()
-        font.setFamily("MS Shell Dlg 2")
-        font.setPointSize(11)
-        self.label_9.setFont(font)
         self.label_9.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.label_9.setObjectName("label_9")
         self.label_10 = QtWidgets.QLabel(self.groupBox_5)
         self.label_10.setGeometry(QtCore.QRect(10, 70, 141, 21))
-        font = QtGui.QFont()
-        font.setFamily("MS Shell Dlg 2")
-        font.setPointSize(11)
-        self.label_10.setFont(font)
         self.label_10.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.label_10.setObjectName("label_10")
         self.targetDistributionSpinBox = QtWidgets.QDoubleSpinBox(self.groupBox_5)
         self.targetDistributionSpinBox.setGeometry(QtCore.QRect(160, 70, 68, 24))
         font = QtGui.QFont()
-        font.setFamily("MS Shell Dlg 2")
-        font.setPointSize(13)
+        font.setPointSize(12)
         self.targetDistributionSpinBox.setFont(font)
         self.targetDistributionSpinBox.setMinimum(2.0)
         self.targetDistributionSpinBox.setMaximum(70.0)
@@ -316,8 +299,7 @@ class Ui_MainWindow(object):
         self.targetTiltSpinBox = QtWidgets.QDoubleSpinBox(self.groupBox_5)
         self.targetTiltSpinBox.setGeometry(QtCore.QRect(160, 30, 68, 24))
         font = QtGui.QFont()
-        font.setFamily("MS Shell Dlg 2")
-        font.setPointSize(13)
+        font.setPointSize(12)
         self.targetTiltSpinBox.setFont(font)
         self.targetTiltSpinBox.setMinimum(0.0)
         self.targetTiltSpinBox.setMaximum(90.0)
@@ -327,6 +309,9 @@ class Ui_MainWindow(object):
         self.predictSignalButton = QtWidgets.QPushButton(self.tab_3)
         self.predictSignalButton.setMinimumSize(QtCore.QSize(90, 0))
         self.predictSignalButton.setMaximumSize(QtCore.QSize(120, 16777215))
+        font = QtGui.QFont()
+        font.setPointSize(16)
+        self.predictSignalButton.setFont(font)
         self.predictSignalButton.setLayoutDirection(QtCore.Qt.LeftToRight)
         self.predictSignalButton.setStyleSheet("background-color: #76c472")
         self.predictSignalButton.setDefault(False)
@@ -418,6 +403,5 @@ class Ui_MainWindow(object):
         self.actionExit.setText(_translate("MainWindow", " &Exit"))
         self.actionExit.setShortcut(_translate("MainWindow", "Ctrl+Q"))
         self.actionAMPS_script_editor.setText(_translate("MainWindow", "AMPS script editor"))
-
 from CustomTable import DataFrameWidget
 from MplWidgets import matplotlibWidget, visAMPSWidget
