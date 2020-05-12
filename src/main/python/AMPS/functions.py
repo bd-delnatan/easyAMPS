@@ -6,8 +6,8 @@ integrals needed for SHG & TPF models.
 
 """
 
-from numba import cfunc, jit
-from numba.types import intc, CPointer, float64
+from numba import cfunc, jit, vectorize
+from numba.core.types import intc, CPointer, float64
 import numpy as np
 from scipy.integrate import quad
 from scipy import LowLevelCallable
@@ -157,6 +157,43 @@ def s_tpf_integrand(θ, *args):
     )
 
 
+# cheap integration routine for approximating solutions
+@vectorize([float64(float64, float64)])
+def rough_shgratio(μ, σ):
+    θ = np.linspace(0.0, np.pi, 100)
+    W = np.zeros_like(θ)
+
+    for n in range(-2, 3):
+        x1 = 2.0 * np.pi * n + θ
+        x2 = 2.0 * np.pi * n - θ
+        arg1 = (x1 - μ) / σ
+        arg2 = (x2 - μ) / σ
+        W += np.exp(-0.5 * arg1 * arg1) + np.exp(-0.5 * arg2 * arg2)
+
+    _P = np.sum(np.cos(θ) ** 3 * W * np.sin(θ))
+    _S = np.sum(np.sin(θ) ** 2 * np.cos(θ) * W * np.sin(θ))
+
+    return 1.88 * 4.0 * (_P / _S) ** 2
+
+
+@vectorize([float64(float64, float64)])
+def rough_tpfratio(μ, σ):
+    θ = np.linspace(0.0, np.pi, 100)
+    W = np.zeros_like(θ)
+
+    for n in range(-2, 3):
+        x1 = 2.0 * np.pi * n + θ
+        x2 = 2.0 * np.pi * n - θ
+        arg1 = (x1 - μ) / σ
+        arg2 = (x2 - μ) / σ
+        W += np.exp(-0.5 * arg1 * arg1) + np.exp(-0.5 * arg2 * arg2)
+
+    _P = np.sum(np.cos(θ) ** 4 * np.sin(θ) ** 2 * W * np.sin(θ))
+    _S = np.sum(np.sin(θ) ** 6 * W * np.sin(θ))
+
+    return 1.88 * (8.0 * _P) / (3.0 * _S)
+
+
 def nP_SHG(μ, σ, n=2.0):
     normalizer = quad(wrapped_gaussian, 0, np.pi, args=(μ, σ, n))[0]
     integrand = quad(p_shg_integrand, 0, np.pi, args=(μ, σ, n))[0]
@@ -181,15 +218,19 @@ def nS_TPF(μ, σ, n=2.0):
     return (integrand / normalizer) * 3.0 / 8.0
 
 
-def nSHGratio(μ, σ, fresnel_ratio=1.88, n=2.0):
-
+def nSHGratio(μ, σ, fresnel_ratio=1.88, n=2.0, unit="radians"):
+    if unit == "degree":
+        μ *= np.pi / 180.0
+        σ *= np.pi / 180.0
     P_integrand = quad(p_shg_integrand, 0, np.pi, args=(μ, σ, n))[0]
     S_integrand = quad(s_shg_integrand, 0, np.pi, args=(μ, σ, n))[0]
     return fresnel_ratio * 4.0 * (P_integrand / S_integrand) ** 2
 
 
-def nTPFratio(μ, σ, fresnel_ratio=1.88, n=2.0):
-
+def nTPFratio(μ, σ, fresnel_ratio=1.88, n=2.0, unit="radians"):
+    if unit == "degree":
+        μ *= np.pi / 180.0
+        σ *= np.pi / 180.0
     P_integrand = quad(p_tpf_integrand, 0, np.pi, args=(μ, σ, n))[0]
     S_integrand = quad(s_tpf_integrand, 0, np.pi, args=(μ, σ, n))[0]
     return fresnel_ratio * (8.0 * P_integrand) / (3.0 * S_integrand)
@@ -256,19 +297,6 @@ def dTPFratio(μ, σ, n=2):
     return df_dμ, df_dσ
 
 
-# deprecated, these are 2x more expensive than nSHGratio, nTPFratio
-def SHGratio(μ, σ, fresnel_ratio=1.88, n=2):
-    pshg = nP_SHG(μ, σ, n=2)
-    sshg = nS_SHG(μ, σ, n=2)
-    return fresnel_ratio * (pshg / sshg)
-
-
-def TPFratio(μ, σ, fresnel_ratio=1.88, n=2):
-    ptpf = nP_TPF(μ, σ, n=n)
-    stpf = nS_TPF(μ, σ, n=n)
-    return fresnel_ratio * (ptpf / stpf)
-
-
 # convenient function for generating ranges in radians given arguments in degree
 def linspace_rad(start, stop, **kwargs):
     return np.linspace(np.deg2rad(start), np.deg2rad(stop), **kwargs)
@@ -279,5 +307,7 @@ _ptpf = np.vectorize(nP_TPF, excluded=["n"])
 _stpf = np.vectorize(nS_TPF, excluded=["n"])
 _pshg = np.vectorize(nP_TPF, excluded=["n"])
 _sshg = np.vectorize(nP_TPF, excluded=["n"])
-_tpfratio = np.vectorize(nTPFratio, excluded=["fresnel_ratio", "n"])
-_shgratio = np.vectorize(nSHGratio, excluded=["fresnel_ratio", "n"])
+_tpfratio = np.vectorize(nTPFratio, excluded=["fresnel_ratio", "n", "unit"])
+_shgratio = np.vectorize(nSHGratio, excluded=["fresnel_ratio", "n", "unit"])
+_tpfratio_der = np.vectorize(dTPFratio, excluded=["n"])
+_shgratio_der = np.vectorize(dSHGratio, excluded=["n"])

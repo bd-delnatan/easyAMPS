@@ -81,11 +81,14 @@ def autolabel(rects, ax):
     for rect in rects:
         height = rect.get_height()
         voffset = 3 if height > 0 else -15
-        ax.annotate("{:.1f}%".format(height),
-                    xy=(rect.get_x() + rect.get_width() / 2, height),
-                    xytext=(0, voffset),  # 3 points vertical offset
-                    textcoords="offset points",
-                    ha='center', va='bottom')
+        ax.annotate(
+            "{:.1f}%".format(height),
+            xy=(rect.get_x() + rect.get_width() / 2, height),
+            xytext=(0, voffset),  # 3 points vertical offset
+            textcoords="offset points",
+            ha="center",
+            va="bottom",
+        )
 
 
 class AppContext(ApplicationContext):
@@ -442,7 +445,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         sol = df.apply(compute_angles, axis=1)
         df[["angle", "distribution"]] = sol
 
-        df.loc[df["label"] == "", "label"] = np.nan
+        df.loc[(df["label"] == "") | (df["label"].isna()), "label"] = "N/A"
 
         # reassign results back to widget
         self.calculatorTableWidget._data_model.df = df
@@ -528,15 +531,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         dlg1.exec_()
 
     def predict_signals(self):
-
         def _compute_signals(μ, σ):
             μ_rad, σ_rad = np.deg2rad(μ), np.deg2rad(σ)
-            return np.array([
-                nP_SHG(μ_rad, σ_rad),
-                nS_SHG(μ_rad, σ_rad),
-                nP_TPF(μ_rad, σ_rad),
-                nS_TPF(μ_rad, σ_rad)
-            ])
+            return np.array(
+                [
+                    nP_SHG(μ_rad, σ_rad),
+                    nS_SHG(μ_rad, σ_rad),
+                    nP_TPF(μ_rad, σ_rad),
+                    nS_TPF(μ_rad, σ_rad),
+                ]
+            )
 
         ref_angle = self.referenceTiltSpinBox.value()
         ref_dist = self.referenceDistributionSpinBox.value()
@@ -550,7 +554,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             arg_intensities = _compute_signals(arg_angle, arg_dist)
 
             # compute relative signal changes as a percentage
-            signal_changes = 100.0 * ((arg_intensities - ref_intensities) / ref_intensities)
+            signal_changes = 100.0 * (
+                (arg_intensities - ref_intensities) / ref_intensities
+            )
 
             bar_labels = ["P-SHG", "S-SHG", "P-FL", "S-FL"]
             xpos = np.arange(1, 5)
@@ -559,16 +565,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.predictedSignalWidget.canvas.axes.clear()
 
             # do the actual plotting
-            bars1 = self.predictedSignalWidget.canvas.axes.bar(xpos, signal_changes)
+            bars1 = self.predictedSignalWidget.canvas.axes.bar(
+                xpos, signal_changes
+            )
 
             autolabel(bars1, self.predictedSignalWidget.canvas.axes)
 
-            self.predictedSignalWidget.canvas.axes.grid(b=False, axis='x')
+            self.predictedSignalWidget.canvas.axes.grid(b=False, axis="x")
 
             self.predictedSignalWidget.canvas.axes.set_xticks(xpos)
             self.predictedSignalWidget.canvas.axes.set_xticklabels(bar_labels)
             self.predictedSignalWidget.canvas.axes.set_xlabel("Channels")
-            self.predictedSignalWidget.canvas.axes.set_ylabel(r"% signal change")
+            self.predictedSignalWidget.canvas.axes.set_ylabel(
+                r"% signal change"
+            )
             self.predictedSignalWidget.canvas.refresh()
 
 

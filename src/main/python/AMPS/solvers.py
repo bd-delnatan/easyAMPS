@@ -1,27 +1,18 @@
 """ module for solving AMPS from ratios """
 
 import warnings
-from scipy.optimize import root, minimize
-from .functions import nSHGratio, nTPFratio
-from numpy import rad2deg, deg2rad, exp, nan, isnan, unravel_index, argmax
+from scipy.optimize import root
+from .functions import (
+    rough_shgratio,
+    rough_tpfratio,
+    nSHGratio,
+    nTPFratio,
+    dSHGratio,
+    dTPFratio,
+)
+import numpy as np
+from numba import njit
 from pandas import Series
-from . import __path__
-from pathlib import Path
-import pickle
-
-p = Path(__path__[0])
-
-with open(Path(p) / "SHGlookuptable.pickle", "rb") as fhd:
-    _shglut = pickle.load(fhd)
-
-with open(Path(p) / "TPFlookuptable.pickle", "rb") as fhd:
-    _tpflut = pickle.load(fhd)
-
-# generate low-resolution look up table
-_shgmap = _shglut["map"][::4, ::4]
-_tpfmap = _tpflut["map"][::4, ::4]
-_angles = _shglut["angles"][::4]
-_dist = _shglut["distributions"][::4]
 
 
 def objective(p, rshg_obs, rtpf_obs):
@@ -34,62 +25,95 @@ def objective(p, rshg_obs, rtpf_obs):
 
     """
     μ, σ = p
-    return [rshg_obs - nSHGratio(μ, σ), rtpf_obs - nTPFratio(μ, σ)]
+    return [nSHGratio(μ, σ) - rshg_obs, nTPFratio(μ, σ) - rtpf_obs]
 
 
-def approximate_lookup(rshg, rtpf):
+def jacobian(p, rshg_obs, rtpf_obs):
 
-    llshg = (_shgmap - rshg) ** 2
-    lltpf = (_tpfmap - rtpf) ** 2
-    ll = exp(-(llshg + lltpf))
-    i, j = unravel_index(argmax(ll, axis=None), ll.shape)
-    appx_angle, appx_dist = deg2rad(_angles[i]), deg2rad(_dist[j])
+    μ, σ = p
+    dSHG_dμ, dSHG_dσ = dSHGratio(μ, σ)
+    dTPF_dμ, dTPF_dσ = dTPFratio(μ, σ)
 
-    return appx_angle, appx_dist
+    return [[dSHG_dμ, dSHG_dσ], [dTPF_dμ, dTPF_dσ]]
 
 
-def objective2(x0, rshg_obs, rtpf_obs, fresnel_ratio=1.88):
+@njit(cache=True)
+def approximate_solution(rshg_obs, rtpf_obs):
+    # start with lower / upper bounds
+    xvec = np.linspace(0.0349, 1.222, 75)
+    _lb = np.zeros_like(xvec)
+    _ub = np.ones_like(xvec) * 1.569
 
-    μ, σ = x0
+    # for TPF
+    _lbsign_tpf = np.sign(rough_tpfratio(_lb, xvec) - rtpf_obs)
+    _ubsign_tpf = np.sign(rough_tpfratio(_ub, xvec) - rtpf_obs)
 
-    rshg_calc = nSHGratio(μ, σ)
-    rtpf_calc = nTPFratio(μ, σ)
+    # for SHG
+    _lbsign_shg = np.sign(rough_shgratio(_lb, xvec) - rshg_obs)
+    _ubsign_shg = np.sign(rough_shgratio(_ub, xvec) - rshg_obs)
 
-    return (rshg_obs - rshg_calc) ** 2 + (rtpf_obs - rtpf_calc) ** 2
+    # remove regions with no isocontours
+    nosolution_tpf = _lbsign_tpf == _ubsign_tpf
+    nosolution_shg = _lbsign_shg == _ubsign_shg
+
+    # prepare variables for bisection search
+    ly = _lb[~nosolution_tpf]
+    uy = _ub[~nosolution_tpf]
+    x_tpf = xvec[~nosolution_tpf]
+    lsign = _lbsign_tpf[~nosolution_tpf]
+    usign = _ubsign_tpf[~nosolution_tpf]
+
+    # tolerance of roughly 0.2 degrees
+    tol = 3.5e-3
+
+    # do bisection search for tpf ratio
+    while True:
+        y_tpf = (ly + uy) / 2.0
+        fmid = rough_tpfratio(y_tpf, x_tpf) - rtpf_obs
+        msign = np.sign(fmid)
+        ly[msign == lsign] = y_tpf[msign == lsign]
+        uy[msign == usign] = y_tpf[msign == usign]
+        if np.all(np.abs(uy - ly) < tol):
+            # print(f"Converged after {it:d} iterations.")
+            break
+
+    # do bisection search for shg ratio
+    ly = _lb[~nosolution_shg]
+    uy = _ub[~nosolution_shg]
+    x_shg = xvec[~nosolution_shg]
+    lsign = _lbsign_shg[~nosolution_shg]
+    usign = _ubsign_shg[~nosolution_shg]
+
+    while True:
+        y_shg = (ly + uy) / 2.0
+        fmid = rough_shgratio(y_shg, x_shg) - rshg_obs
+        msign = np.sign(fmid)
+        ly[msign == lsign] = y_shg[msign == lsign]
+        uy[msign == usign] = y_shg[msign == usign]
+        if np.all(np.abs(uy - ly) < tol):
+            # print(f"Converged after {it:d} iterations.")
+            break
+
+    # now find the rough intersectio between two segments
+    # find common / shortest x-axis
+    commonid = np.arange(min(y_shg.size, y_tpf.size))
+    x_common = x_shg[commonid]
+    y_shg = y_shg[commonid]
+    y_tpf = y_tpf[commonid]
+
+    # find index where y_shg is closest to y_tpf
+    ydist = np.abs(y_shg - y_tpf)
+    yminid = np.argmin(ydist)
+
+    x_ans = x_common[yminid]
+    avg_y = (y_shg[yminid] + y_tpf[yminid]) / 2.0
+
+    sol = np.array([avg_y, x_ans])
+
+    return sol
 
 
-def solve_cons_AMPS(rshg, rtpf, silent=True, unit="degree"):
-
-    if isnan(rshg) or isnan(rtpf):
-        if not silent:
-            print(f"Skipping ... SHG-ratio {rshg:.3f}, TPF-ratio {rtpf:.3f}")
-        return nan, nan
-
-    guess = approximate_lookup(rshg, rtpf)
-
-    resopt = minimize(
-        objective2,
-        guess,
-        args=(rshg, rtpf),
-        method="SLSQP",
-        bounds=((1e-3, 1.57), (3.5e-2, 1.484)),
-    )
-
-    if resopt.fun < 5e-4:
-        angle, distribution = resopt.x[0], resopt.x[1]
-        if unit == "degree":
-            return rad2deg(angle), rad2deg(distribution)
-        else:
-            return angle, distribution
-    else:
-        if not silent:
-            print(
-                f"Solution not found! at SHG-ratio {rshg:.3f}, TPF-ratio {rtpf:.3f}"
-            )
-        return nan, nan
-
-
-def solve_AMPS(rshg, rtpf, tolerance=1e-4, unit="degree", silent=True):
+def solve_AMPS(rshg, rtpf, tolerance=1e-3, unit="degree", silent=True):
     """ returns AMPS solution
 
     Args:
@@ -106,32 +130,42 @@ def solve_AMPS(rshg, rtpf, tolerance=1e-4, unit="degree", silent=True):
     if silent:
         warnings.simplefilter("ignore")
 
-    if isnan(rshg) or isnan(rtpf):
+    if np.isnan(rshg) or np.isnan(rtpf):
         if not silent:
             print(f"Skipping ... SHG-ratio {rshg:.3f}, TPF-ratio {rtpf:.3f}")
-        return nan, nan
+        return np.nan, np.nan
 
     try:
-        guess = approximate_lookup(rshg, rtpf)
-        sol = root(objective, guess, args=(rshg, rtpf), tol=tolerance)
+
+        x0 = approximate_solution(rshg, rtpf)
+        # input arguments to objective is in radians
+        sol = root(
+            objective,
+            x0,
+            args=(rshg, rtpf),
+            jac=jacobian,
+            method="hybr",
+            tol=tolerance,
+        )
+
     except ZeroDivisionError:
         if not silent:
             print(
                 f"Solution not found! at SHG-ratio {rshg:.3f}, TPF-ratio {rtpf:.3f}"
             )
-        return nan, nan
+        return np.nan, np.nan
 
     if sol.success:
         # since the solution is unbounded, we need to enforce it ourselves
         # if either of the solution is negative, it's wrong
-        if sol.x[0] < 0 or sol.x[1] < 0.0349:
-            return nan, nan
+        if sol.x[0] < 0 or sol.x[0] < 0:
+            return np.nan, np.nan
         # or if it's beyond the Gaussian approximation model
         if sol.x[0] > 1.571 or sol.x[1] > 1.309:
-            return nan, nan
+            return np.nan, np.nan
 
         if unit == "degree":
-            return rad2deg(sol.x[0]), rad2deg(sol.x[1])
+            return np.rad2deg(sol.x[0]), np.rad2deg(sol.x[1])
 
         elif unit == "radians":
             return sol.x[0], sol.x[1]
@@ -141,19 +175,15 @@ def solve_AMPS(rshg, rtpf, tolerance=1e-4, unit="degree", silent=True):
             print(
                 f"Solution not found! at SHG-ratio {rshg:.3f}, TPF-ratio {rtpf:.3f}"
             )
-        return nan, nan
+        return np.nan, np.nan
 
 
-def compute_angles(df, silent=True, mode="fast"):
+def compute_angles(df, silent=True):
     """ to be used in DataFrame.apply()
 
 
     """
     shgratio = df["SHGratio"]
     tpfratio = df["TPFratio"]
-
-    if mode == "fast":
-        θ_μ, θ_σ = solve_AMPS(shgratio, tpfratio, silent=silent)
-    else:
-        θ_μ, θ_σ = solve_cons_AMPS(shgratio, tpfratio, silent=silent)
+    θ_μ, θ_σ = solve_AMPS(shgratio, tpfratio, silent=silent)
     return Series({"angle": θ_μ, "distribution": θ_σ})

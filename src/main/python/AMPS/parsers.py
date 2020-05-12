@@ -1,8 +1,11 @@
-#!/usr/bin/env python
+"""
+modules containing utility functions used in parsing AMPS phase-determination
+experiments.
+
+"""
 
 import numpy as np
 import pandas as pd
-import re
 from itertools import product
 
 # row look up table
@@ -15,9 +18,10 @@ def form_dilution_block(columns, origin, dilution_factor=2.0 / 3.0, transpose=Fa
 
     Args:
         columns (list of columns): containing dilution series sequence from 1,..,N.
-        [[1,2,3,4,5,6],[6,5,4,3,2,1],[6,1,1,6,1,1],[1,1,6,1,1,6]].
         origin (str): well coordinates denoting origin of block (e.g. "A1")
         dilution_factor (float): dilution factor
+        transpose (bool): if True, then input columns will be transposed,
+        assuming that input has dimensions [columns, rows].
 
     Returns:
         DataFrame containing columns "Well coordinates" and "frac_labeled"
@@ -49,9 +53,7 @@ def form_dilution_block(columns, origin, dilution_factor=2.0 / 3.0, transpose=Fa
         for w, v in zip(product(row_names, column_names), block.ravel())
     ]
 
-    return pd.DataFrame(
-        dilution_map, columns=["Well coordinates", "frac_labeled"]
-    )
+    return pd.DataFrame(dilution_map, columns=["Well coordinates", "frac_labeled"])
 
 
 def get_series(dataframe, series):
@@ -65,7 +67,7 @@ def get_series(dataframe, series):
     return subset
 
 
-def process_experiment(data, config, experiment_name, transpose_block=False):
+def process_experiment(data, config, experiment_name, save_data=False):
     datadict = {}
 
     for experiment, exptconfig in config[experiment_name].items():
@@ -82,7 +84,7 @@ def process_experiment(data, config, experiment_name, transpose_block=False):
 
         if len(origins) > 1:
             for origin in origins:
-                dilution_map = form_dilution_block(pattern, origin, transpose=transpose_block)
+                dilution_map = form_dilution_block(pattern, origin)
                 df = get_series(data, dilution_map)
                 # zero-shift fluorescence
                 pfl_bg = df.query("frac_labeled == 0")["P-FLcorr"].mean()
