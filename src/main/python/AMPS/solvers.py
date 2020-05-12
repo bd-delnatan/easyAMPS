@@ -113,13 +113,13 @@ def approximate_solution(rshg_obs, rtpf_obs):
     return sol
 
 
-def solve_AMPS(rshg, rtpf, tolerance=1e-3, unit="degree", silent=True):
+def solve_AMPS(rshg, rtpf, tolerance=1e-2, unit="degree", silent=True):
     """ returns AMPS solution
 
     Args:
         rshg (float): P/S SHG ratio, observed data.
         rtpf (float): P/S TPF ratio, observed data.
-        tolerance (float): tolerance for root-finding algorithm
+        tolerance (float): tolerance for objective function's zeroes
         unit (str): unit of the result. 'degree' or 'radians'
 
     Returns:
@@ -145,17 +145,22 @@ def solve_AMPS(rshg, rtpf, tolerance=1e-3, unit="degree", silent=True):
             args=(rshg, rtpf),
             jac=jacobian,
             method="hybr",
-            tol=tolerance,
+            tol=1e-3,
         )
+
+        if np.any(np.abs(sol.fun) > tolerance):
+            # tolerance of function value not achieved
+            return np.nan, np.nan
 
     except ZeroDivisionError:
         if not silent:
             print(
-                f"Solution not found! at SHG-ratio {rshg:.3f}, TPF-ratio {rtpf:.3f}"
+                f"Zero division error at SHG-ratio {rshg:.3f}, TPF-ratio {rtpf:.3f}"
             )
         return np.nan, np.nan
 
     if sol.success:
+        # root() success can be due to lack of improvement
         # since the solution is unbounded, we need to enforce it ourselves
         # if either of the solution is negative, it's wrong
         if sol.x[0] < 0 or sol.x[0] < 0:
@@ -171,6 +176,7 @@ def solve_AMPS(rshg, rtpf, tolerance=1e-3, unit="degree", silent=True):
             return sol.x[0], sol.x[1]
 
     else:
+        # root() fail
         if not silent:
             print(
                 f"Solution not found! at SHG-ratio {rshg:.3f}, TPF-ratio {rtpf:.3f}"

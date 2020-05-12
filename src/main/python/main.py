@@ -16,7 +16,7 @@ import os
 import pandas as pd
 import numpy as np
 import matplotlib as mpl
-from AMPS.solvers import compute_angles
+from AMPS.solvers import compute_angles, solve_AMPS
 from AMPS import AMPSexperiment, return_signs
 from AMPS.functions import nP_SHG, nS_SHG, nP_TPF, nS_TPF
 from AMPS.viz import visualize_AMPS_solution, overview
@@ -144,6 +144,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.maintitle = f"easyAMPS v{__VERSION__} (Biodesy, Inc.)"
         self.currentfilepath = None
+
+        # initialize njit (throwaway solution)
+        _ = solve_AMPS(20, 1.3)
 
         # To make Mac/Windows more coherent disable Native Mac menubar
         self.menuBar().setNativeMenuBar(False)

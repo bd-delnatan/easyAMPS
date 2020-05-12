@@ -302,7 +302,7 @@ def linspace_rad(start, stop, **kwargs):
     return np.linspace(np.deg2rad(start), np.deg2rad(stop), **kwargs)
 
 
-# vectorized versions of the function
+# vectorized versions of quadrature-integrated functions
 _ptpf = np.vectorize(nP_TPF, excluded=["n"])
 _stpf = np.vectorize(nS_TPF, excluded=["n"])
 _pshg = np.vectorize(nP_TPF, excluded=["n"])
