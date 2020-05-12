@@ -419,7 +419,6 @@ class ScriptWriterDialog(QDialog):
 
 
 if __name__ == "__main__":
-    import sys
 
     sys.path.append("C:\\Users\\delna\\Apps\\easyAMPS\\src\\main\\python")
     print("Running as main.... ")

@@ -3,12 +3,7 @@ from PyQt5.QtWidgets import (
     QFileDialog,
     QAction,
     QToolBar,
-    QDialog,
-    QPlainTextEdit,
-    QPushButton,
-    QVBoxLayout,
 )
-from PyQt5.QtGui import QFontDatabase
 from fbs_runtime.application_context.PyQt5 import ApplicationContext
 from pathlib import Path
 import sys
@@ -26,7 +21,7 @@ from scriptWriter import ScriptWriterDialog
 from CustomTable import alert
 from AMPS import _AMPSboundaries
 from easyAMPS_maingui import Ui_MainWindow
-
+from DebugWindow import ScriptWindow
 
 __VERSION__ = "0.1.2b"
 
@@ -96,46 +91,6 @@ class AppContext(ApplicationContext):
         window = MainWindow()
         window.show()
         return self.app.exec_()
-
-
-# custom scripting interface for debugging
-class ScriptWindow(QDialog):
-    def __init__(self, parent=None):
-        super(ScriptWindow, self).__init__(parent)
-
-        self.setGeometry(100, 100, 800, 600)
-        self.parent = parent
-        font = QFontDatabase.systemFont(QFontDatabase.FixedFont)
-        font.setFixedPitch(True)
-        font.setPointSize(8)
-
-        self.editor = QPlainTextEdit()
-        self.editor.setFont(font)
-        self.editor.setTabStopWidth(self.editor.fontMetrics().width(" ") * 4)
-
-        self.runScriptButton = QPushButton("Run script")
-
-        self.layout = QVBoxLayout()
-        self.layout.addWidget(self.editor)
-        self.layout.addWidget(self.runScriptButton)
-
-        self.setLayout(self.layout)
-        self.setWindowTitle("Script editor")
-
-        self.setup_button_behavior()
-
-        self.show()
-
-    def setup_button_behavior(self):
-        self.runScriptButton.clicked.connect(self.runscript)
-
-    def runscript(self):
-        print("Script is executed.")
-        print("Testing parent data accessibility")
-
-        text2execute = self.editor.toPlainText()
-
-        exec(text2execute)
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
