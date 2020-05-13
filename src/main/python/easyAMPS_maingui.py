@@ -2,13 +2,11 @@
 
 # Form implementation generated from reading ui file 'easyAMPS_maingui.ui'
 #
-# Created by: PyQt5 UI code generator 5.14.2
+# Created by: PyQt5 UI code generator 5.9.2
 #
 # WARNING! All changes made in this file will be lost!
 
-
 from PyQt5 import QtCore, QtGui, QtWidgets
-
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -239,10 +237,16 @@ class Ui_MainWindow(object):
         self.groupBox_4.setObjectName("groupBox_4")
         self.label_7 = QtWidgets.QLabel(self.groupBox_4)
         self.label_7.setGeometry(QtCore.QRect(20, 30, 131, 21))
+        font = QtGui.QFont()
+        font.setPointSize(11)
+        self.label_7.setFont(font)
         self.label_7.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.label_7.setObjectName("label_7")
         self.label_8 = QtWidgets.QLabel(self.groupBox_4)
         self.label_8.setGeometry(QtCore.QRect(10, 70, 141, 21))
+        font = QtGui.QFont()
+        font.setPointSize(11)
+        self.label_8.setFont(font)
         self.label_8.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.label_8.setObjectName("label_8")
         self.referenceDistributionSpinBox = QtWidgets.QDoubleSpinBox(self.groupBox_4)
@@ -281,10 +285,16 @@ class Ui_MainWindow(object):
         self.groupBox_5.setObjectName("groupBox_5")
         self.label_9 = QtWidgets.QLabel(self.groupBox_5)
         self.label_9.setGeometry(QtCore.QRect(20, 30, 131, 21))
+        font = QtGui.QFont()
+        font.setPointSize(11)
+        self.label_9.setFont(font)
         self.label_9.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.label_9.setObjectName("label_9")
         self.label_10 = QtWidgets.QLabel(self.groupBox_5)
         self.label_10.setGeometry(QtCore.QRect(10, 70, 141, 21))
+        font = QtGui.QFont()
+        font.setPointSize(11)
+        self.label_10.setFont(font)
         self.label_10.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.label_10.setObjectName("label_10")
         self.targetDistributionSpinBox = QtWidgets.QDoubleSpinBox(self.groupBox_5)
@@ -403,5 +413,6 @@ class Ui_MainWindow(object):
         self.actionExit.setText(_translate("MainWindow", " &Exit"))
         self.actionExit.setShortcut(_translate("MainWindow", "Ctrl+Q"))
         self.actionAMPS_script_editor.setText(_translate("MainWindow", "AMPS script editor"))
+
 from CustomTable import DataFrameWidget
 from MplWidgets import matplotlibWidget, visAMPSWidget

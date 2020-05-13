@@ -549,6 +549,11 @@ point</string>
                <height>21</height>
               </rect>
              </property>
+             <property name="font">
+              <font>
+               <pointsize>11</pointsize>
+              </font>
+             </property>
              <property name="text">
               <string>Probe angle, ˚</string>
              </property>
@@ -564,6 +569,11 @@ point</string>
                <width>141</width>
                <height>21</height>
               </rect>
+             </property>
+             <property name="font">
+              <font>
+               <pointsize>11</pointsize>
+              </font>
              </property>
              <property name="text">
               <string>Probe distribution, ˚</string>
@@ -657,6 +667,11 @@ point</string>
                <height>21</height>
               </rect>
              </property>
+             <property name="font">
+              <font>
+               <pointsize>11</pointsize>
+              </font>
+             </property>
              <property name="text">
               <string>Probe angle, ˚</string>
              </property>
@@ -672,6 +687,11 @@ point</string>
                <width>141</width>
                <height>21</height>
               </rect>
+             </property>
+             <property name="font">
+              <font>
+               <pointsize>11</pointsize>
+              </font>
              </property>
              <property name="text">
               <string>Probe distribution, ˚</string>
