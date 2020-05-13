@@ -423,8 +423,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     label=label,
                 )
         else:
+            label = df["label"].unique().tolist()[0]
             self.anglecalc_mplwidget.canvas.axes.plot(
-                df["distribution"].values, df["angle"].values, "o", label="N/A",
+                df["distribution"].values, df["angle"].values, "o", label=label,
             )
 
         self.anglecalc_mplwidget.canvas.axes.legend(

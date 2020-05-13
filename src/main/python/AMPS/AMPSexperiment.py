@@ -261,6 +261,8 @@ class AMPSexperiment:
 
 
 def return_signs(vec, inflection):
+    if inflection is None:
+        inflection = 0.0
     vecsign = [-1 if v > inflection else -1 for v in vec]
     return array(vecsign)
 
