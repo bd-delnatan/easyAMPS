@@ -13,7 +13,9 @@ row2id = {letter: index + 1 for index, letter in enumerate("ABCDEFGHIJKLMNOP")}
 id2row = {index: letter for letter, index in row2id.items()}
 
 
-def form_dilution_block(columns, origin, dilution_factor=2.0 / 3.0, transpose=False):
+def form_dilution_block(
+    columns, origin, dilution_factor=2.0 / 3.0, transpose=False
+):
     """ returns plate map for dilution series
 
     Args:
@@ -53,7 +55,9 @@ def form_dilution_block(columns, origin, dilution_factor=2.0 / 3.0, transpose=Fa
         for w, v in zip(product(row_names, column_names), block.ravel())
     ]
 
-    return pd.DataFrame(dilution_map, columns=["Well coordinates", "frac_labeled"])
+    return pd.DataFrame(
+        dilution_map, columns=["Well coordinates", "frac_labeled"]
+    )
 
 
 def get_series(dataframe, series):
@@ -67,7 +71,9 @@ def get_series(dataframe, series):
     return subset
 
 
-def process_experiment(data, config, experiment_name, save_data=False):
+def process_experiment(
+    data, config, experiment_name, save_data=False, transpose_block=True
+):
     datadict = {}
 
     for experiment, exptconfig in config[experiment_name].items():
@@ -84,7 +90,9 @@ def process_experiment(data, config, experiment_name, save_data=False):
 
         if len(origins) > 1:
             for origin in origins:
-                dilution_map = form_dilution_block(pattern, origin)
+                dilution_map = form_dilution_block(
+                    pattern, origin, transpose=transpose_block
+                )
                 df = get_series(data, dilution_map)
                 # zero-shift fluorescence
                 pfl_bg = df.query("frac_labeled == 0")["P-FLcorr"].mean()
@@ -100,7 +108,9 @@ def process_experiment(data, config, experiment_name, save_data=False):
 
         elif len(origins) == 1:
 
-            dilution_map = form_dilution_block(pattern, origins[0])
+            dilution_map = form_dilution_block(
+                pattern, origins[0], transpose=transpose_block
+            )
             df = get_series(data, dilution_map)
             pfl_bg = df.query("frac_labeled == 0")["P-FLcorr"].mean()
             sfl_bg = df.query("frac_labeled == 0")["S-FLcorr"].mean()
