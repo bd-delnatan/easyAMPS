@@ -7,7 +7,7 @@ integrals needed for SHG & TPF models.
 """
 
 from numba import cfunc, jit, vectorize
-from numba.core.types import intc, CPointer, float64
+from numba.types import intc, CPointer, float64
 import numpy as np
 from scipy.integrate import quad
 from scipy import LowLevelCallable

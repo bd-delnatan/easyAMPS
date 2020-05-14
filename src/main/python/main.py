@@ -23,7 +23,7 @@ from AMPS import _AMPSboundaries
 from easyAMPS_maingui import Ui_MainWindow
 from DebugWindow import ScriptWindow
 
-__VERSION__ = "0.1.2b"
+__VERSION__ = "0.1.4"
 
 
 # needed to properly scale high DPI screens in Windows OS
