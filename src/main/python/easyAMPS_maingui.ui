@@ -591,6 +591,15 @@ point</string>
                <height>22</height>
               </rect>
              </property>
+             <property name="minimum">
+              <double>0.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>89.900000000000006</double>
+             </property>
+             <property name="value">
+              <double>45.000000000000000</double>
+             </property>
             </widget>
             <widget class="QDoubleSpinBox" name="referenceDistributionSpinBox">
              <property name="geometry">
@@ -600,6 +609,15 @@ point</string>
                <width>81</width>
                <height>22</height>
               </rect>
+             </property>
+             <property name="minimum">
+              <double>2.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>70.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>25.000000000000000</double>
              </property>
             </widget>
             <zorder>label_8</zorder>
@@ -681,6 +699,12 @@ point</string>
                <height>22</height>
               </rect>
              </property>
+             <property name="maximum">
+              <double>89.900000000000006</double>
+             </property>
+             <property name="value">
+              <double>60.000000000000000</double>
+             </property>
             </widget>
             <widget class="QDoubleSpinBox" name="targetDistributionSpinBox">
              <property name="geometry">
@@ -690,6 +714,15 @@ point</string>
                <width>81</width>
                <height>22</height>
               </rect>
+             </property>
+             <property name="minimum">
+              <double>2.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>70.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>35.000000000000000</double>
              </property>
             </widget>
            </widget>
