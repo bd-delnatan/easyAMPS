@@ -7,6 +7,7 @@ experiments.
 import numpy as np
 import pandas as pd
 from itertools import product
+import re
 
 # row look up table
 row2id = {letter: index + 1 for index, letter in enumerate("ABCDEFGHIJKLMNOP")}
@@ -37,13 +38,20 @@ def form_dilution_block(
     else:
         block = np.array(columns)
 
+    # convert 'blank' entries into nan
+    block[block == 'blank'] = np.nan
+
+    # coerce into float
+    block = block.astype(np.float64)
+
+    # comput dilution factor
     block = dilution_factor ** (block - 1)
 
     # replace lowest dilution factor with 0
-    block[block == block.min()] = 0.0
+    block[block == np.nanmin(block)] = 0.0
 
     # round to the nearest 3-digit
-    block = np.round(block, 3)
+    block = np.around(block, decimals=3)
 
     Nrows, Ncols = block.shape
 
@@ -55,9 +63,11 @@ def form_dilution_block(
         for w, v in zip(product(row_names, column_names), block.ravel())
     ]
 
-    return pd.DataFrame(
+    df = pd.DataFrame(
         dilution_map, columns=["Well coordinates", "frac_labeled"]
     )
+
+    return df
 
 
 def get_series(dataframe, series):
@@ -88,13 +98,14 @@ def process_experiment(
 
         dfs = []
 
+        # if multiple origins were given, merge them
         if len(origins) > 1:
             for origin in origins:
                 dilution_map = form_dilution_block(
                     pattern, origin, transpose=transpose_block
                 )
                 df = get_series(data, dilution_map)
-                # zero-shift fluorescence
+                # zero-shift fluorescence subtract by unlabeled protein wells
                 pfl_bg = df.query("frac_labeled == 0")["P-FLcorr"].mean()
                 sfl_bg = df.query("frac_labeled == 0")["S-FLcorr"].mean()
                 df["P-FLcorr"] -= pfl_bg
@@ -106,6 +117,7 @@ def process_experiment(
                 dfs.append(df)
             datadict[experiment] = pd.concat(dfs, axis=0)
 
+        # otherwise, just read the data
         elif len(origins) == 1:
 
             dilution_map = form_dilution_block(

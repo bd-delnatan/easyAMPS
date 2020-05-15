@@ -14,7 +14,7 @@ def place_in_range(vec, frac):
 def strip_chart(data, grp, ax, column_name="TPFratio"):
 
     fracs, idx = np.unique(data["frac_labeled"], return_inverse=True)
-    jittered_idx = idx + np.random.random(idx.size) * 0.25
+    jittered_idx = idx + (np.random.random(idx.size) - 0.4) * 0.2
     xbar = np.arange(fracs.size)
 
     fraclabels = [f"{v*100:.1f}%" for v in fracs]
@@ -26,6 +26,7 @@ def strip_chart(data, grp, ax, column_name="TPFratio"):
         linewidth=0.8,
         edgecolor="black",
         capsize=2.5,
+        width=0.8,
         color="pink",
         alpha=0.5,
         error_kw={"elinewidth": 0.75},

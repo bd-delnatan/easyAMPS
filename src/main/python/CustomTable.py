@@ -486,6 +486,22 @@ class DataFrameModel(QAbstractTableModel):
             if value == "":
                 return False
 
+            # try to convert data to int or float
+            if '.' in value:
+                # convert to float
+                try:
+                    value = float(value)
+                except ValueError:
+                    # keep as string
+                    pass
+
+            else:
+                # convert to integer
+                try:
+                    value = int(value)
+                except ValueError:
+                    pass
+
             # assign data to internal data frame
             self._df.loc[glob_row, glob_col] = value
             # assign data to visible data frame (self.filtered is a copy!)
