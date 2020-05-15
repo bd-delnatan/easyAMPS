@@ -582,58 +582,30 @@ point</string>
               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
              </property>
             </widget>
-            <widget class="QDoubleSpinBox" name="referenceDistributionSpinBox">
-             <property name="geometry">
-              <rect>
-               <x>160</x>
-               <y>70</y>
-               <width>68</width>
-               <height>24</height>
-              </rect>
-             </property>
-             <property name="font">
-              <font>
-               <pointsize>12</pointsize>
-              </font>
-             </property>
-             <property name="minimum">
-              <double>2.000000000000000</double>
-             </property>
-             <property name="maximum">
-              <double>70.000000000000000</double>
-             </property>
-             <property name="value">
-              <double>25.000000000000000</double>
-             </property>
-            </widget>
             <widget class="QDoubleSpinBox" name="referenceTiltSpinBox">
              <property name="geometry">
               <rect>
                <x>160</x>
                <y>30</y>
-               <width>68</width>
-               <height>24</height>
+               <width>81</width>
+               <height>22</height>
               </rect>
              </property>
-             <property name="font">
-              <font>
-               <pointsize>12</pointsize>
-              </font>
-             </property>
-             <property name="minimum">
-              <double>0.000000000000000</double>
-             </property>
-             <property name="maximum">
-              <double>90.000000000000000</double>
-             </property>
-             <property name="value">
-              <double>45.000000000000000</double>
+            </widget>
+            <widget class="QDoubleSpinBox" name="referenceDistributionSpinBox">
+             <property name="geometry">
+              <rect>
+               <x>160</x>
+               <y>70</y>
+               <width>81</width>
+               <height>22</height>
+              </rect>
              </property>
             </widget>
             <zorder>label_8</zorder>
             <zorder>label_7</zorder>
-            <zorder>referenceDistributionSpinBox</zorder>
             <zorder>referenceTiltSpinBox</zorder>
+            <zorder>referenceDistributionSpinBox</zorder>
            </widget>
           </item>
           <item>
@@ -700,52 +672,24 @@ point</string>
               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
              </property>
             </widget>
-            <widget class="QDoubleSpinBox" name="targetDistributionSpinBox">
-             <property name="geometry">
-              <rect>
-               <x>160</x>
-               <y>70</y>
-               <width>68</width>
-               <height>24</height>
-              </rect>
-             </property>
-             <property name="font">
-              <font>
-               <pointsize>12</pointsize>
-              </font>
-             </property>
-             <property name="minimum">
-              <double>2.000000000000000</double>
-             </property>
-             <property name="maximum">
-              <double>70.000000000000000</double>
-             </property>
-             <property name="value">
-              <double>25.000000000000000</double>
-             </property>
-            </widget>
             <widget class="QDoubleSpinBox" name="targetTiltSpinBox">
              <property name="geometry">
               <rect>
                <x>160</x>
                <y>30</y>
-               <width>68</width>
-               <height>24</height>
+               <width>81</width>
+               <height>22</height>
               </rect>
              </property>
-             <property name="font">
-              <font>
-               <pointsize>12</pointsize>
-              </font>
-             </property>
-             <property name="minimum">
-              <double>0.000000000000000</double>
-             </property>
-             <property name="maximum">
-              <double>90.000000000000000</double>
-             </property>
-             <property name="value">
-              <double>45.000000000000000</double>
+            </widget>
+            <widget class="QDoubleSpinBox" name="targetDistributionSpinBox">
+             <property name="geometry">
+              <rect>
+               <x>160</x>
+               <y>70</y>
+               <width>81</width>
+               <height>22</height>
+              </rect>
              </property>
             </widget>
            </widget>
