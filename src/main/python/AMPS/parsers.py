@@ -38,8 +38,9 @@ def form_dilution_block(
     else:
         block = np.array(columns)
 
-    # convert 'blank' entries into nan
-    block[block == 'blank'] = np.nan
+    if np.any(block == "blank"):
+        # convert 'blank' entries into nan
+        block[block == "blank"] = np.nan
 
     # coerce into float
     block = block.astype(np.float64)
