@@ -357,9 +357,14 @@ class DataFrameWidget(QTableView):
 
     def prototype_set_filter(self):
         column_names = self._data_model.df.columns
-        filter_dialog = FilterDialog(column_names, parent=self)
-        filter_dialog.show()
-        filter_dialog.exec_()
+        # check if table still has excluded data
+        Nexcluded = len(self._data_model.excluded_index)
+        if Nexcluded > 0:
+            alert("Warning", "please remove excluded data before doing filtering.")
+        else:
+            filter_dialog = FilterDialog(column_names, parent=self)
+            filter_dialog.show()
+            filter_dialog.exec_()
 
     def getVisibleData(self):
 

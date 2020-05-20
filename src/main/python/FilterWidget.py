@@ -88,7 +88,6 @@ class FilterDialog(QDialog):
         self.parent._data_model.filterData()
 
     def setup_button_connections(self):
-
         self.add_button.clicked.connect(self.add_filter)
         self.remove_button.clicked.connect(self.remove_filter)
 
