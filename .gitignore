@@ -8,3 +8,4 @@ target/
 **/*.manifest
 **/*.spec
 **/*.swp
+**/*.*~
