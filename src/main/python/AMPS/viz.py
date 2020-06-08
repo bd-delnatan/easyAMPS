@@ -218,6 +218,22 @@ def overview(
                 lw=1.5,
                 zorder=-100,
             )
+            _deg = np.rad2deg(experiment.Pphases.optres.params["delphi"].value)
+
+            if experiment.Pphases.optres.params["delphi"].stderr is not None:
+                _degerr = np.rad2deg(
+                    experiment.Pphases.optres.params["delphi"].stderr
+                )
+            else:
+                _degerr = np.nan
+
+            ax[0, 0].text(
+                0.05,
+                0.85,
+                f"{_deg:.0f} ± {_degerr:.0f} ˚",
+                fontsize=12,
+                transform=ax[0, 0].transAxes
+            )
 
         if experiment.Sphases.optres.success:
             ax[0, 1].plot(
@@ -227,6 +243,23 @@ def overview(
                 c="darkred",
                 lw=1.5,
                 zorder=-100,
+            )
+            _deg = np.rad2deg(experiment.Sphases.optres.params["delphi"].value)
+
+            if experiment.Sphases.optres.params["delphi"].stderr is not None:
+                _degerr = np.rad2deg(
+                    experiment.Sphases.optres.params["delphi"].stderr
+                )
+            else:
+                _degerr = np.nan
+
+            reptext = f"{_deg:.0f} ± {_degerr:.0f} ˚"
+            ax[0, 1].text(
+                0.05,
+                0.85,
+                f"{_deg:.0f} ± {_degerr:.0f} ˚",
+                fontsize=12,
+                transform=ax[0, 1].transAxes,
             )
 
     ax[0, 0].set_xlabel("P-FLcorr")
