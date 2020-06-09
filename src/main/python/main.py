@@ -11,6 +11,7 @@ import os
 import pandas as pd
 import numpy as np
 import matplotlib as mpl
+import traceback
 from AMPS.solvers import compute_angles, solve_AMPS
 from AMPS import AMPSexperiment, return_signs
 from AMPS.functions import nP_SHG, nS_SHG, nP_TPF, nS_TPF
@@ -62,9 +63,7 @@ def checkcolumns(columns):
     valid = columnset.issubset(inputset)
 
     if not valid:
-        missing = list(
-            columnset.intersection(inputset).symmetric_difference(columnset)
-        )
+        missing = list(columnset.intersection(inputset).symmetric_difference(columnset))
     else:
         missing = []
 
@@ -84,6 +83,19 @@ def autolabel(rects, ax):
             ha="center",
             va="bottom",
         )
+
+
+def safecall(callback):
+    def wrapped_callback(*args, **kwargs):
+        try:
+            return callback(args[0])
+        except:
+            # catch all errors
+            error_string = traceback.format_exc()
+            alert("Error!", error_string)
+            return None
+
+    return wrapped_callback
 
 
 class AppContext(ApplicationContext):
@@ -113,9 +125,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.addToolBar(toolbar)
 
         fit_phases_button = QAction("Plot 4ch data", self)
-        fit_phases_button.setStatusTip(
-            "Plot 4-channel SHG/TPF data from Data Table"
-        )
+        fit_phases_button.setStatusTip("Plot 4-channel SHG/TPF data from Data Table")
         fit_phases_button.triggered.connect(self.visualize_4ch)
         toolbar.addAction(fit_phases_button)
 
@@ -157,9 +167,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # setup connections
         self.actionOpen.triggered.connect(self.openfile)
         self.actionSaveCSV.triggered.connect(self.savefile)
-        self.actionAMPS_script_editor.triggered.connect(
-            self.open_AMPS_script_editor
-        )
+        self.actionAMPS_script_editor.triggered.connect(self.open_AMPS_script_editor)
         self.actionExit.triggered.connect(sys.exit)
 
         # button connections
@@ -185,9 +193,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.currentfilepath = Path(fileName)
             self.rawdataframe = pd.read_csv(fileName)
             columns = self.rawdataframe.columns
-            replacements = {
-                c: c.replace("#", "Num") for c in columns if "#" in c
-            }
+            replacements = {c: c.replace("#", "Num") for c in columns if "#" in c}
             self.rawdataframe.rename(columns=replacements, inplace=True)
 
             self.tableWidget.setDataFrame(self.rawdataframe)
@@ -222,10 +228,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 data.to_excel(targetfile, index=False)
 
     def open_AMPS_script_editor(self):
-
         scripteditor_dialog = ScriptWriterDialog()
         scripteditor_dialog.exec_()
 
+    @safecall
     def visualize_4ch(self):
         # self.visualchecksWidget
         # get raw data
@@ -273,6 +279,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             alert("Warning!", warnstr)
 
+    @safecall
     def fit_phase_difference(self):
 
         data = self.tableWidget.getVisibleData()
@@ -310,17 +317,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             # extract parameters and put into GUI
             Pphase = self.experiment.pshg_phase
-            Pphase_sigma = self.experiment.Pphases.optres.params[
-                "delphi"
-            ].stderr
+            Pphase_sigma = self.experiment.Pphases.optres.params["delphi"].stderr
             Pphase_error = (
                 np.rad2deg(Pphase_sigma) if Pphase_sigma is not None else np.nan
             )
             self.Pphase_sigma_label.setText(f"±{Pphase_error:.2f}")
             Sphase = self.experiment.sshg_phase
-            Sphase_sigma = self.experiment.Sphases.optres.params[
-                "delphi"
-            ].stderr
+            Sphase_sigma = self.experiment.Sphases.optres.params["delphi"].stderr
             Sphase_error = (
                 np.rad2deg(Sphase_sigma) if Sphase_sigma is not None else np.nan
             )
@@ -367,6 +370,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             self.visualchecksWidget.canvas.refresh()
 
+    @safecall
     def correct_SHG(self):
 
         # get phase and background values from GUI
@@ -383,9 +387,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if Sinflection == 0.0:
             Sinflection = None
 
-        df = self.tableWidget._data_model.df.apply(
-            pd.to_numeric, errors="ignore"
-        )
+        df = self.tableWidget._data_model.df.apply(pd.to_numeric, errors="ignore")
 
         p_signs = return_signs(df["P-FLcorr"].values, Pinflection)
         s_signs = return_signs(df["S-FLcorr"].values, Sinflection)
@@ -395,6 +397,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.tableWidget._data_model.df = df.copy()
 
+    @safecall
     def compute_angles(self):
         # get data from table
         df = self.calculatorTableWidget._data_model.df.copy()
@@ -417,10 +420,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             for label in unique_labels:
                 wrk = df[df["label"] == label]
                 self.anglecalc_mplwidget.canvas.axes.plot(
-                    wrk["distribution"].values,
-                    wrk["angle"].values,
-                    "o",
-                    label=label,
+                    wrk["distribution"].values, wrk["angle"].values, "o", label=label,
                 )
         else:
             label = df["label"].unique().tolist()[0]
@@ -438,6 +438,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.anglecalc_mplwidget.canvas.axes.set_ylim([0.0, 89.9])
         self.anglecalc_mplwidget.canvas.refresh()
 
+    @safecall
     def check_solutions(self):
 
         # get selected points
@@ -448,12 +449,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         tpfratios = []
 
         for row in selectedrows:
-            _shgratio = self.calculatorTableWidget._data_model.df.loc[
-                row, "SHGratio"
-            ]
-            _tpfratio = self.calculatorTableWidget._data_model.df.loc[
-                row, "TPFratio"
-            ]
+            _shgratio = self.calculatorTableWidget._data_model.df.loc[row, "SHGratio"]
+            _tpfratio = self.calculatorTableWidget._data_model.df.loc[row, "TPFratio"]
             if _shgratio != "":
                 shgratios.append(toNumber(_shgratio))
             else:
@@ -489,6 +486,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # execute dialog box
         dlg1.exec_()
 
+    @safecall
     def predict_signals(self):
         def _compute_signals(μ, σ):
             μ_rad, σ_rad = np.deg2rad(μ), np.deg2rad(σ)
@@ -524,9 +522,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.predictedSignalWidget.canvas.axes.clear()
 
             # do the actual plotting
-            bars1 = self.predictedSignalWidget.canvas.axes.bar(
-                xpos, signal_changes
-            )
+            bars1 = self.predictedSignalWidget.canvas.axes.bar(xpos, signal_changes)
 
             autolabel(bars1, self.predictedSignalWidget.canvas.axes)
 
@@ -535,9 +531,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.predictedSignalWidget.canvas.axes.set_xticks(xpos)
             self.predictedSignalWidget.canvas.axes.set_xticklabels(bar_labels)
             self.predictedSignalWidget.canvas.axes.set_xlabel("Channels")
-            self.predictedSignalWidget.canvas.axes.set_ylabel(
-                r"% signal change"
-            )
+            self.predictedSignalWidget.canvas.axes.set_ylabel(r"% signal change")
             self.predictedSignalWidget.canvas.refresh()
 
 
