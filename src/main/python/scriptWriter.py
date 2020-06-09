@@ -21,8 +21,22 @@ from pathlib import Path
 from PyQt5.QtCore import QRegExp, QObject, pyqtSignal
 from AMPS.parsers import process_experiment
 from PyBiodesy.DataStructures import read_detail, subtract_blank_fluorescence
+from CustomTable import alert
 import yaml
+import traceback
 import sys
+
+
+def safecall(callback):
+    def wrapped_callback(*args, **kwargs):
+        try:
+            return callback(args[0])
+        except:
+            # catch all errors
+            error_string = traceback.format_exc()
+            alert("Error!", error_string)
+            return None
+    return wrapped_callback
 
 
 templatestr = r"""#script template for parsing AMPS experiments
@@ -351,6 +365,7 @@ class ScriptWriterDialog(QDialog):
 
             print(f"Saved to {targetfile}")
 
+    @safecall
     def runscript(self):
         """ Execute script from editor """
         scriptbody = self.editor.toPlainText()
